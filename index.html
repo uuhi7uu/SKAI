@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Simulator Dinamika Kereta Api Pro v7.5 - Firebase Live</title>
+    <title>Simulator Dinamika Kereta Api Pro v7.7 - Fix Login</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
@@ -325,7 +325,7 @@
         <div id="authScreen" class="fade-in">
             <div class="menu-header-box">
                 <i class="fa-solid fa-train"></i>
-                <h1>Train Dynamics Pro v7.5</h1>
+                <h1>Train Dynamics Pro v7.7</h1>
                 <p>Firebase Realtime Cloud Database Connected ⚡</p>
             </div>
 
@@ -334,7 +334,7 @@
                 
                 <div class="input-box">
                     <label>Email Pemain / Admin:</label>
-                    <input type="email" id="authEmail" value="" placeholder="nama@email.com">
+                    <input type="email" id="authEmail" value="" placeholder="nama / email kamu">
                 </div>
 
                 <div class="input-box">
@@ -408,7 +408,7 @@
                 <div class="logo-row">
                     <div class="logo-box">
                         <i class="fa-solid fa-train"></i>
-                        <h1>PLB 431A Penataran v7.5</h1>
+                        <h1>PLB 431A Penataran v7.7</h1>
                     </div>
 
                     <!-- MONEY BAR HEADER SIMULASI -->
@@ -807,6 +807,7 @@
         const ADMIN_EMAIL = "welahdalah235@gmail.com";
         let loggedInEmail = null;
         let isAdmin = false;
+        let isCurrentPusdalopkaApproved = false;
 
         function cleanEmailKey(email) {
             return email.replace(/[.#$\[\]]/g, "_").toLowerCase();
@@ -880,59 +881,64 @@
             }
         };
 
+        /* FIX REGISTRATION PROCESS */
         window.handleRegister = async function() {
-            const email = document.getElementById('authEmail').value.trim().toLowerCase();
+            const inputVal = document.getElementById('authEmail').value.trim();
             const password = document.getElementById('authPassword').value;
 
-            if (!email || !password) return alert('Isi Email dan Password dulu!');
-            if (password.length < 4) return alert('Password minimal 4 karakter!');
+            if (!inputVal || !password) return alert('Isi Nama/Email dan Password dulu!');
+            if (password.length < 3) return alert('Password minimal 3 karakter!');
 
+            const email = inputVal.includes('@') ? inputVal.toLowerCase() : `${inputVal.toLowerCase()}@sim.com`;
             const key = cleanEmailKey(email);
             const accRef = ref(db, 'accounts/' + key);
-            const snapshot = await get(accRef);
 
-            if (snapshot.exists()) {
-                alert('Email ini sudah terdaftar, bre! Silakan masukkan password lalu klik LOGIN.');
-                return;
+            try {
+                const snapshot = await get(accRef);
+                if (snapshot.exists()) {
+                    alert('Akun ' + inputVal + ' sudah terdaftar! Langsung klik LOGIN.');
+                    return;
+                }
+
+                await set(accRef, { password: password, email: email, name: inputVal });
+                alert('Registrasi Berhasil! Akun: ' + inputVal + '\nSilakan klik tombol LOGIN.');
+            } catch (err) {
+                alert('Gagal Register ke Firebase! Pastikan Rules Firebase sudah .read=true, .write=true.\nError: ' + err.message);
             }
-
-            await set(accRef, { password: password, email: email });
-            alert('Registrasi Cloud akun ' + email + ' berhasil! Silakan klik tombol LOGIN.');
-            document.getElementById('authPassword').value = '';
         };
 
+        /* FIX LOGIN PROCESS (AUTO-CREATE IF NEW) */
         window.handleLogin = async function() {
-            const email = document.getElementById('authEmail').value.trim().toLowerCase();
+            const inputVal = document.getElementById('authEmail').value.trim();
             const password = document.getElementById('authPassword').value;
 
-            if (!email || !password) return alert('Isi Email dan Password dulu!');
+            if (!inputVal || !password) return alert('Isi Nama/Email dan Password dulu!');
 
+            const email = inputVal.includes('@') ? inputVal.toLowerCase() : `${inputVal.toLowerCase()}@sim.com`;
             const key = cleanEmailKey(email);
             const accRef = ref(db, 'accounts/' + key);
 
-            if (email === ADMIN_EMAIL.toLowerCase()) {
-                const snapshotAdmin = await get(accRef);
-                if (!snapshotAdmin.exists()) {
-                    await set(accRef, { password: password, email: email });
+            try {
+                let snapshot = await get(accRef);
+
+                // Jika belum terdaftar, otomatis buatkan akun baru (Auto-Register)
+                if (!snapshot.exists()) {
+                    await set(accRef, { password: password, email: email, name: inputVal });
+                    snapshot = await get(accRef);
                 }
+
+                if (snapshot.val().password !== password) {
+                    alert('Password salah, bre! Akses ditolak.');
+                    return;
+                }
+
+                loggedInEmail = email;
+                isAdmin = (email === ADMIN_EMAIL.toLowerCase());
+
+                initUserSession();
+            } catch (err) {
+                alert('Gagal Login ke Firebase!\nError: ' + err.message);
             }
-
-            const snapshot = await get(accRef);
-
-            if (!snapshot.exists()) {
-                alert('Akun tidak ditemukan di Firebase Cloud! Silakan klik REGISTER.');
-                return;
-            }
-
-            if (snapshot.val().password !== password) {
-                alert('Password salah, bre! Akses ditolak.');
-                return;
-            }
-
-            loggedInEmail = email;
-            isAdmin = (email === ADMIN_EMAIL.toLowerCase());
-
-            initUserSession();
         };
 
         window.handleLogout = function() {
@@ -955,7 +961,9 @@
         async function initUserSession() {
             document.getElementById('authScreen').classList.add('hidden');
             document.getElementById('mainMenuScreen').classList.remove('hidden');
-            document.getElementById('displayUserEmail').innerText = loggedInEmail + (isAdmin ? ' (ADMIN/PUSDALOPKA)' : '');
+            
+            const displayStr = loggedInEmail.endsWith('@sim.com') ? loggedInEmail.replace('@sim.com', '') : loggedInEmail;
+            document.getElementById('displayUserEmail').innerText = displayStr + (isAdmin ? ' (ADMIN)' : '');
 
             if (isAdmin) {
                 document.getElementById('btnAdminMenu').classList.remove('hidden');
@@ -967,7 +975,7 @@
 
             await window.loadUserData();
             window.syncUIAfterDataChange();
-            window.checkPusdalopkaPermissionStatus();
+            await window.checkPusdalopkaPermissionStatus();
             listenRealtimePusdalopka();
             updateActiveTrainStatus();
         }
@@ -1000,6 +1008,7 @@
 
         window.invalidatePusdalopkaPermission = function() {
             if (!loggedInEmail) return;
+            isCurrentPusdalopkaApproved = false;
             const key = cleanEmailKey(loggedInEmail);
             remove(ref(db, 'pusdalopka_requests/' + key));
         };
@@ -1025,16 +1034,18 @@
 
         window.checkPusdalopkaPermissionStatus = async function() {
             const snapshot = await get(ref(db, 'pusdalopka_requests'));
-            window.checkPusdalopkaPermissionStatusFromData(snapshot.val() || {});
+            return window.checkPusdalopkaPermissionStatusFromData(snapshot.val() || {});
         };
 
         window.checkPusdalopkaPermissionStatusFromData = function(reqsData) {
             const badge = document.getElementById('pusdalopkaStatusBadge');
-            if (!badge) return;
 
             if (window.isStandardStamformasi()) {
-                badge.innerText = "Status Stamformasi: Normal PLB 431A (Sesuai Standard)";
-                badge.style.borderColor = "#10b981"; badge.style.color = "#34d399";
+                isCurrentPusdalopkaApproved = true;
+                if (badge) {
+                    badge.innerText = "Status Stamformasi: Normal PLB 431A (Sesuai Standard)";
+                    badge.style.borderColor = "#10b981"; badge.style.color = "#34d399";
+                }
                 return true;
             }
 
@@ -1042,20 +1053,32 @@
             const myReq = reqsData[key];
 
             if (myReq && myReq.status === 'APPROVED') {
-                badge.innerText = `Izin Pusdalopka ACC: "LD ${myReq.reason.substring(0,25)}..."`;
-                badge.style.borderColor = "#10b981"; badge.style.color = "#34d399";
+                isCurrentPusdalopkaApproved = true;
+                if (badge) {
+                    badge.innerText = `Izin Pusdalopka ACC: "LD ${myReq.reason.substring(0,25)}..."`;
+                    badge.style.borderColor = "#10b981"; badge.style.color = "#34d399";
+                }
                 return true;
             } else if (myReq && myReq.status === 'PENDING') {
-                badge.innerText = "Status: Menunggu ACC Pusdalopka (Admin) untuk LD / Tambahan Kereta";
-                badge.style.borderColor = "#f59e0b"; badge.style.color = "#fbbf24";
+                isCurrentPusdalopkaApproved = false;
+                if (badge) {
+                    badge.innerText = "Status: Menunggu ACC Pusdalopka (Admin) untuk LD / Tambahan Kereta";
+                    badge.style.borderColor = "#f59e0b"; badge.style.color = "#fbbf24";
+                }
                 return false;
             } else if (myReq && myReq.status === 'REJECTED') {
-                badge.innerText = "Permohonan LD Ditolak Pusdalopka! Ubah Rangkaian / Ajukan Lagi.";
-                badge.style.borderColor = "#ef4444"; badge.style.color = "#f87171";
+                isCurrentPusdalopkaApproved = false;
+                if (badge) {
+                    badge.innerText = "Permohonan LD Ditolak Pusdalopka! Ubah Rangkaian / Ajukan Lagi.";
+                    badge.style.borderColor = "#ef4444"; badge.style.color = "#f87171";
+                }
                 return false;
             } else {
-                badge.innerText = "Stamformasi Tidak Sesuai PLB 431A! Perlu Izin Pusdalopka.";
-                badge.style.borderColor = "#e11d48"; badge.style.color = "#fda4af";
+                isCurrentPusdalopkaApproved = false;
+                if (badge) {
+                    badge.innerText = "Stamformasi Tidak Sesuai PLB 431A! Perlu Izin Pusdalopka.";
+                    badge.style.borderColor = "#e11d48"; badge.style.color = "#fda4af";
+                }
                 return false;
             }
         };
@@ -1180,7 +1203,8 @@
         };
 
         window.checkStamformasiAndStart = function() {
-            if (window.isStandardStamformasi() || window.checkPusdalopkaPermissionStatus()) {
+            const isStandard = window.isStandardStamformasi();
+            if (isStandard || isCurrentPusdalopkaApproved) {
                 window.startSimulatorApp();
             } else {
                 window.openPusdalopkaModal();
