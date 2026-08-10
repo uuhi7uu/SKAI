@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Simulator Dinamika Kereta Api Pro v7.8 - Reset Password & Fix Render</title>
+    <title>Simulator Dinamika Kereta Api Pro v7.8.1 - Fix Auth Sync & Database</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
@@ -325,7 +325,7 @@
         <div id="authScreen" class="fade-in">
             <div class="menu-header-box">
                 <i class="fa-solid fa-train"></i>
-                <h1>Train Dynamics Pro v7.8</h1>
+                <h1>Train Dynamics Pro v7.8.1</h1>
                 <p>Firebase Realtime Cloud Database Connected ⚡</p>
             </div>
 
@@ -333,13 +333,13 @@
                 <h2><i class="fa-solid fa-user-lock"></i> Login / Register Cloud</h2>
                 
                 <div class="input-box">
-                    <label>Email Pemain / Admin:</label>
-                    <input type="email" id="authEmail" value="" placeholder="contoh: user@gmail.com">
+                    <label>Email Pemain / Username:</label>
+                    <input type="text" id="authEmail" value="" placeholder="contoh: user@gmail.com atau fadill">
                 </div>
 
                 <div class="input-box">
                     <label>Password:</label>
-                    <input type="password" id="authPassword" value="" placeholder="masukkan password">
+                    <input type="password" id="authPassword" value="" placeholder="masukkan password (min. 6 karakter)">
                 </div>
 
                 <div style="display:flex; gap:6px; margin-top:4px;">
@@ -412,7 +412,7 @@
                 <div class="logo-row">
                     <div class="logo-box">
                         <i class="fa-solid fa-train"></i>
-                        <h1>PLB 431A Penataran v7.8</h1>
+                        <h1>PLB 431A Penataran v7.8.1</h1>
                     </div>
 
                     <!-- MONEY BAR HEADER SIMULASI -->
@@ -796,7 +796,7 @@
         </div>
     </div>
 
-    <!-- FIREBASE SDK ENGINE MODULAR V10 (REALTIME DB + AUTH) -->
+    <!-- FIREBASE SDK ENGINE MODULAR V10 (REALTIME DB + AUTH FIXED) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, get, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -817,6 +817,14 @@
 
         function cleanEmailKey(email) {
             return email.replace(/[.#$\[\]]/g, "_").toLowerCase();
+        }
+
+        function formatValidEmail(input) {
+            let str = input.trim().toLowerCase();
+            if (!str.includes('@')) {
+                str += '@gmail.com';
+            }
+            return str;
         }
 
         let audioCtx = null;
@@ -887,32 +895,46 @@
             }
         };
 
-        /* FIREBASE AUTH REGISTRATION */
+        /* FIX REGISTER PROCESS VIA FIREBASE AUTH + REALTIME DB FALLBACK */
         window.handleRegister = async function() {
-            const inputVal = document.getElementById('authEmail').value.trim();
+            const rawVal = document.getElementById('authEmail').value;
             const password = document.getElementById('authPassword').value;
 
-            if (!inputVal || !password) return alert('Isi Email dan Password dulu!');
+            if (!rawVal || !password) return alert('Isi Email/Username dan Password dulu!');
             if (password.length < 6) return alert('Password minimal 6 karakter!');
 
-            const email = inputVal.includes('@') ? inputVal.toLowerCase() : `${inputVal.toLowerCase()}@sim.com`;
+            const email = formatValidEmail(rawVal);
+            const key = cleanEmailKey(email);
 
             try {
                 await createUserWithEmailAndPassword(auth, email, password);
-                alert('Registrasi Berhasil! Akun: ' + email + '\nSilakan klik tombol LOGIN.');
+                
+                // SYNC DATA PERTAMA KALI KE REALTIME DB
+                await set(ref(db, 'users/' + key), window.userData);
+                await set(ref(db, 'accounts/' + key), { email: email, registeredAt: new Date().toISOString() });
+
+                alert('✅ Registrasi Berhasil!\nAkun: ' + email + '\nSilakan klik LOGIN.');
             } catch (err) {
-                alert('Gagal Register: ' + err.message);
+                // FALLBACK REALTIME DB JIKA AUTH METHOD BLM AKTIF
+                if (err.code === 'auth/operation-not-allowed') {
+                    await set(ref(db, 'accounts/' + key), { password: password, email: email });
+                    await set(ref(db, 'users/' + key), window.userData);
+                    alert('✅ Registrasi Realtime DB Berhasil!\nAkun: ' + email + '\nSilakan klik LOGIN.');
+                } else {
+                    alert('Gagal Register! ' + err.message);
+                }
             }
         };
 
-        /* FIREBASE AUTH LOGIN */
+        /* FIX LOGIN PROCESS VIA FIREBASE AUTH + REALTIME DB FALLBACK */
         window.handleLogin = async function() {
-            const inputVal = document.getElementById('authEmail').value.trim();
+            const rawVal = document.getElementById('authEmail').value;
             const password = document.getElementById('authPassword').value;
 
-            if (!inputVal || !password) return alert('Isi Email dan Password dulu!');
+            if (!rawVal || !password) return alert('Isi Email/Username dan Password dulu!');
 
-            const email = inputVal.includes('@') ? inputVal.toLowerCase() : `${inputVal.toLowerCase()}@sim.com`;
+            const email = formatValidEmail(rawVal);
+            const key = cleanEmailKey(email);
 
             try {
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -921,20 +943,28 @@
 
                 initUserSession();
             } catch (err) {
-                alert('Gagal Login! Periksa kembali Email & Password kamu.\nError: ' + err.message);
+                // FALLBACK JIKA LOGIN VIA DB MANUAL
+                const snapshot = await get(ref(db, 'accounts/' + key));
+                if (snapshot.exists() && snapshot.val().password === password) {
+                    loggedInEmail = email;
+                    isAdmin = (loggedInEmail === ADMIN_EMAIL.toLowerCase());
+                    initUserSession();
+                } else {
+                    alert('Gagal Login! Periksa kembali Email/Username & Password kamu.\nError: ' + err.message);
+                }
             }
         };
 
         /* FITUR RESET PASSWORD VIA EMAIL GMAIL (PILIHAN B) */
         window.handleForgotPassword = async function() {
-            const inputVal = document.getElementById('authEmail').value.trim();
-            if (!inputVal) return alert('Ketik alamat Email kamu dulu di kotak email di atas!');
+            const rawVal = document.getElementById('authEmail').value;
+            if (!rawVal) return alert('Ketik alamat Email kamu dulu di kotak atas!');
 
-            const email = inputVal.includes('@') ? inputVal.toLowerCase() : `${inputVal.toLowerCase()}@gmail.com`;
+            const email = formatValidEmail(rawVal);
 
             try {
                 await sendPasswordResetEmail(auth, email);
-                alert(`✅ Link Reset Password telah dikirim ke Email (${email})!\nSilakan cek Inbox/Spam di Gmail kamu.`);
+                alert(`✅ Link Reset Password berhasil dikirim ke Email (${email})!\nSilakan cek Inbox atau folder Spam di Gmail kamu.`);
             } catch (err) {
                 alert('Gagal mengirim email reset password!\nError: ' + err.message);
             }
@@ -963,7 +993,7 @@
             document.getElementById('authScreen').classList.add('hidden');
             document.getElementById('mainMenuScreen').classList.remove('hidden');
             
-            const displayStr = loggedInEmail.endsWith('@sim.com') ? loggedInEmail.replace('@sim.com', '') : loggedInEmail;
+            const displayStr = loggedInEmail.endsWith('@gmail.com') ? loggedInEmail.replace('@gmail.com', '') : loggedInEmail;
             document.getElementById('displayUserEmail').innerText = displayStr + (isAdmin ? ' (ADMIN)' : '');
 
             if (isAdmin) {
