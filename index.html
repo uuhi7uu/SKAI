@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Simulator Dinamika Kereta Api Pro v7.7 - Fix Login</title>
+    <title>Simulator Dinamika Kereta Api Pro v7.8 - Reset Password & Fix Render</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
@@ -321,11 +321,11 @@
 
     <div class="app-wrapper">
 
-        <!-- 0. SCREEN AUTH LOGIN / REGISTER -->
+        <!-- 0. SCREEN AUTH LOGIN / REGISTER / RESET PW -->
         <div id="authScreen" class="fade-in">
             <div class="menu-header-box">
                 <i class="fa-solid fa-train"></i>
-                <h1>Train Dynamics Pro v7.7</h1>
+                <h1>Train Dynamics Pro v7.8</h1>
                 <p>Firebase Realtime Cloud Database Connected ⚡</p>
             </div>
 
@@ -334,7 +334,7 @@
                 
                 <div class="input-box">
                     <label>Email Pemain / Admin:</label>
-                    <input type="email" id="authEmail" value="" placeholder="nama / email kamu">
+                    <input type="email" id="authEmail" value="" placeholder="contoh: user@gmail.com">
                 </div>
 
                 <div class="input-box">
@@ -346,6 +346,10 @@
                     <button onclick="handleLogin()" class="btn btn-blue" style="flex:1; padding:8px; font-weight:bold;">Login</button>
                     <button onclick="handleRegister()" class="btn btn-emerald" style="flex:1; padding:8px; font-weight:bold;">Register</button>
                 </div>
+
+                <button onclick="handleForgotPassword()" class="btn btn-amber" style="padding:6px; font-size:0.65rem; font-weight:bold; margin-top:4px;">
+                    <i class="fa-solid fa-key"></i> Lupa Password? Kirim Email Reset
+                </button>
             </div>
         </div>
 
@@ -408,7 +412,7 @@
                 <div class="logo-row">
                     <div class="logo-box">
                         <i class="fa-solid fa-train"></i>
-                        <h1>PLB 431A Penataran v7.7</h1>
+                        <h1>PLB 431A Penataran v7.8</h1>
                     </div>
 
                     <!-- MONEY BAR HEADER SIMULASI -->
@@ -525,7 +529,7 @@
                     <div class="telemetry-mini-grid" style="margin-top: 2px;">
                         <div class="telebox-mini"><label>Posisi Total</label><span id="dispDistance" style="color:#67e8f9;">0.00 km</span></div>
                         <div class="telebox-mini"><label>St. Tujuan</label><span id="dispNextStationName" style="color:#fde047;">St. Surabaya Gubeng</span></div>
-                        <div class="telebox-mini"><label>Jarak S5 Stop</label><span id="dispNextStationDist" style="color:#38bdf8;">800 m</span></div>
+                        <div class="telebox-mini"><label>Jarak S10G</label><span id="dispNextStationDist" style="color:#38bdf8;">800 m</span></div>
                         <div class="telebox-mini"><label>Est. Stop</label><span id="dispEstStoppingDist" style="color:#fbbf24;">0.0 m</span></div>
                         <div class="telebox-mini" style="grid-column: span 2;"><label>Akselerasi</label><span id="dispAccel" style="color:#fff;">+0.00 m/s²</span></div>
                     </div>
@@ -792,10 +796,11 @@
         </div>
     </div>
 
-    <!-- FIREBASE SDK ENGINE MODULAR (V10) -->
+    <!-- FIREBASE SDK ENGINE MODULAR V10 (REALTIME DB + AUTH) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, get, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getAuth, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
             databaseURL: "https://skai-multiplayer-default-rtdb.asia-southeast1.firebasedatabase.app/"
@@ -803,6 +808,7 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+        const auth = getAuth(app);
 
         const ADMIN_EMAIL = "welahdalah235@gmail.com";
         let loggedInEmail = null;
@@ -873,71 +879,64 @@
             const snapshot = await get(ref(db, 'users/' + key));
             if (snapshot.exists()) {
                 window.userData = snapshot.val();
-                if (!window.userData.slots || window.userData.slots.length !== 16) {
-                    window.userData.slots = Array(16).fill(null);
+                if (!window.userData.slots || !Array.isArray(window.userData.slots) || window.userData.slots.length !== 16) {
+                    window.userData.slots = ['cc201', 'k3split', 'k3split', 'k3split', 'kmp3', 'k3split', 'k3split', 'k3split', null, null, null, null, null, null, null, null];
                 }
             } else {
                 window.saveUserData();
             }
         };
 
-        /* FIX REGISTRATION PROCESS */
+        /* FIREBASE AUTH REGISTRATION */
         window.handleRegister = async function() {
             const inputVal = document.getElementById('authEmail').value.trim();
             const password = document.getElementById('authPassword').value;
 
-            if (!inputVal || !password) return alert('Isi Nama/Email dan Password dulu!');
-            if (password.length < 3) return alert('Password minimal 3 karakter!');
+            if (!inputVal || !password) return alert('Isi Email dan Password dulu!');
+            if (password.length < 6) return alert('Password minimal 6 karakter!');
 
             const email = inputVal.includes('@') ? inputVal.toLowerCase() : `${inputVal.toLowerCase()}@sim.com`;
-            const key = cleanEmailKey(email);
-            const accRef = ref(db, 'accounts/' + key);
 
             try {
-                const snapshot = await get(accRef);
-                if (snapshot.exists()) {
-                    alert('Akun ' + inputVal + ' sudah terdaftar! Langsung klik LOGIN.');
-                    return;
-                }
-
-                await set(accRef, { password: password, email: email, name: inputVal });
-                alert('Registrasi Berhasil! Akun: ' + inputVal + '\nSilakan klik tombol LOGIN.');
+                await createUserWithEmailAndPassword(auth, email, password);
+                alert('Registrasi Berhasil! Akun: ' + email + '\nSilakan klik tombol LOGIN.');
             } catch (err) {
-                alert('Gagal Register ke Firebase! Pastikan Rules Firebase sudah .read=true, .write=true.\nError: ' + err.message);
+                alert('Gagal Register: ' + err.message);
             }
         };
 
-        /* FIX LOGIN PROCESS (AUTO-CREATE IF NEW) */
+        /* FIREBASE AUTH LOGIN */
         window.handleLogin = async function() {
             const inputVal = document.getElementById('authEmail').value.trim();
             const password = document.getElementById('authPassword').value;
 
-            if (!inputVal || !password) return alert('Isi Nama/Email dan Password dulu!');
+            if (!inputVal || !password) return alert('Isi Email dan Password dulu!');
 
             const email = inputVal.includes('@') ? inputVal.toLowerCase() : `${inputVal.toLowerCase()}@sim.com`;
-            const key = cleanEmailKey(email);
-            const accRef = ref(db, 'accounts/' + key);
 
             try {
-                let snapshot = await get(accRef);
-
-                // Jika belum terdaftar, otomatis buatkan akun baru (Auto-Register)
-                if (!snapshot.exists()) {
-                    await set(accRef, { password: password, email: email, name: inputVal });
-                    snapshot = await get(accRef);
-                }
-
-                if (snapshot.val().password !== password) {
-                    alert('Password salah, bre! Akses ditolak.');
-                    return;
-                }
-
-                loggedInEmail = email;
-                isAdmin = (email === ADMIN_EMAIL.toLowerCase());
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                loggedInEmail = userCredential.user.email;
+                isAdmin = (loggedInEmail === ADMIN_EMAIL.toLowerCase());
 
                 initUserSession();
             } catch (err) {
-                alert('Gagal Login ke Firebase!\nError: ' + err.message);
+                alert('Gagal Login! Periksa kembali Email & Password kamu.\nError: ' + err.message);
+            }
+        };
+
+        /* FITUR RESET PASSWORD VIA EMAIL GMAIL (PILIHAN B) */
+        window.handleForgotPassword = async function() {
+            const inputVal = document.getElementById('authEmail').value.trim();
+            if (!inputVal) return alert('Ketik alamat Email kamu dulu di kotak email di atas!');
+
+            const email = inputVal.includes('@') ? inputVal.toLowerCase() : `${inputVal.toLowerCase()}@gmail.com`;
+
+            try {
+                await sendPasswordResetEmail(auth, email);
+                alert(`✅ Link Reset Password telah dikirim ke Email (${email})!\nSilakan cek Inbox/Spam di Gmail kamu.`);
+            } catch (err) {
+                alert('Gagal mengirim email reset password!\nError: ' + err.message);
             }
         };
 
@@ -947,15 +946,17 @@
                 remove(ref(db, 'active_trains/' + key));
             }
 
-            loggedInEmail = null;
-            isAdmin = false;
-            
-            document.getElementById('authEmail').value = '';
-            document.getElementById('authPassword').value = '';
+            signOut(auth).then(() => {
+                loggedInEmail = null;
+                isAdmin = false;
+                
+                document.getElementById('authEmail').value = '';
+                document.getElementById('authPassword').value = '';
 
-            document.getElementById('mainMenuScreen').classList.add('hidden');
-            document.getElementById('simulatorAppScreen').classList.add('hidden');
-            document.getElementById('authScreen').classList.remove('hidden');
+                document.getElementById('mainMenuScreen').classList.add('hidden');
+                document.getElementById('simulatorAppScreen').classList.add('hidden');
+                document.getElementById('authScreen').classList.remove('hidden');
+            });
         };
 
         async function initUserSession() {
@@ -999,9 +1000,10 @@
             if (!loggedInEmail) return;
             const key = cleanEmailKey(loggedInEmail);
             const activeRef = ref(db, 'active_trains/' + key);
+            const activeSlots = (window.userData && Array.isArray(window.userData.slots)) ? window.userData.slots.filter(s => s !== null) : [];
             set(activeRef, {
                 email: loggedInEmail,
-                formation: window.userData.slots.filter(s => s !== null),
+                formation: activeSlots,
                 time: new Date().toLocaleTimeString()
             });
         }
@@ -1019,10 +1021,11 @@
 
             const key = cleanEmailKey(loggedInEmail);
             const reqRef = ref(db, 'pusdalopka_requests/' + key);
+            const activeSlots = (window.userData && Array.isArray(window.userData.slots)) ? window.userData.slots.filter(s => s !== null) : [];
 
             set(reqRef, {
                 email: loggedInEmail,
-                formation: window.userData.slots.filter(s => s !== null),
+                formation: activeSlots,
                 reason: reason,
                 status: 'PENDING',
                 time: new Date().toLocaleTimeString()
@@ -1104,7 +1107,7 @@
                         <span>${r.email}</span>
                         <span style="color:#fbbf24">${r.status}</span>
                     </div>
-                    <div><b>Formasi:</b> ${r.formation.join(' - ').toUpperCase()}</div>
+                    <div><b>Formasi:</b> ${(r.formation || []).join(' - ').toUpperCase()}</div>
                     <div><b>Alasan:</b> "${r.reason}"</div>
                     <div style="display:flex; gap:4px; margin-top:2px;">
                         <button onclick="adminApprovePusdalopkaFirebase('${k}', true)" class="btn btn-emerald" style="flex:1; padding:3px;">ACC</button>
@@ -1189,6 +1192,7 @@
         };
 
         window.isStandardStamformasi = function() {
+            if (!window.userData || !Array.isArray(window.userData.slots)) return true;
             const filled = window.userData.slots.filter(s => s !== null);
             if (filled.length !== 8) return false;
             
@@ -1213,7 +1217,7 @@
 
         window.openPusdalopkaModal = function() {
             const preview = document.getElementById('pushedFormationPreview');
-            const activeSlots = window.userData.slots.filter(s => s !== null);
+            const activeSlots = (window.userData && Array.isArray(window.userData.slots)) ? window.userData.slots.filter(s => s !== null) : [];
             if (preview) {
                 preview.innerText = activeSlots.length > 0 ? activeSlots.join(' - ').toUpperCase() : '[ KOSONG ]';
             }
@@ -1277,16 +1281,16 @@
             { name: "Surabaya Kota", arr: "-", dep: "17:40", note: "Awal Dinas", pos: 0, isMajor: true, crossTrain: null },
             { name: "Surabaya Gubeng", arr: "17:48", dep: "17:52", note: "St. Besar", pos: 1200, isMajor: true, crossTrain: null },
             { name: "Wonokromo", arr: "18:00", dep: "18:07", note: "St. Besar", pos: 3200, isMajor: true, crossTrain: null },
-            { name: "Waru", arr: "18:16", dep: "18:18", note: "Halte", pos: 5500, isMajor: false, crossTrain: null },
+            { name: "Waru", arr: "18:16", dep: "18:18", note: "Berhenti Normal", pos: 5500, isMajor: false, crossTrain: null },
             { name: "Gedangan", arr: "18:26", dep: "18:36", note: "×404 (Persilangan)", pos: 7800, isMajor: false, crossTrain: "404 Commuter Line" },
             { name: "Sidoarjo", arr: "18:47", dep: "18:58", note: "×34 (Persilangan)", pos: 11200, isMajor: true, crossTrain: "34 Express" },
-            { name: "Tanggulangin", arr: "19:07", dep: "19:10", note: "Halte", pos: 14000, isMajor: false, crossTrain: null },
-            { name: "Porong", arr: "19:17", dep: "19:20", note: "Halte", pos: 16800, isMajor: false, crossTrain: null },
+            { name: "Tanggulangin", arr: "19:07", dep: "19:10", note: "Berhenti Normal", pos: 14000, isMajor: false, crossTrain: null },
+            { name: "Porong", arr: "19:17", dep: "19:20", note: "Berhenti Normal", pos: 16800, isMajor: false, crossTrain: null },
             { name: "Bangil", arr: "19:36", dep: "19:52", note: "St. Besar (Isi BBM)", pos: 21500, isMajor: true, crossTrain: null },
             { name: "Wonokerto", arr: "20:03", dep: "20:25", note: "×2634 (Persilangan)", pos: 26500, isMajor: false, crossTrain: "2634 Barang" },
             { name: "Lawang", arr: "20:50", dep: "20:52", note: "St. Besar", pos: 32000, isMajor: true, crossTrain: null },
-            { name: "Singosari", arr: "21:02", dep: "21:04", note: "Halte", pos: 35500, isMajor: false, crossTrain: null },
-            { name: "Blimbing", arr: "21:12", dep: "21:14", note: "Halte", pos: 39000, isMajor: false, crossTrain: null },
+            { name: "Singosari", arr: "21:02", dep: "21:04", note: "Berhenti Normal", pos: 35500, isMajor: false, crossTrain: null },
+            { name: "Blimbing", arr: "21:12", dep: "21:14", note: "Berhenti Normal", pos: 39000, isMajor: false, crossTrain: null },
             { name: "Malang", arr: "21:26", dep: "21:28", note: "×2636 (Akhir Dinas)", pos: 43000, isMajor: true, crossTrain: "2636 Jayabay" }
         ];
 
@@ -1368,6 +1372,16 @@
             autoBrakeModes.push({ code: 'EMG', name: 'EMERGENCY', bp: 0.0, color: '#881337' });
         }
         generate80BrakeModes();
+
+        function getUsedUnitCounts() {
+            const used = {};
+            if (window.userData && Array.isArray(window.userData.slots)) {
+                window.userData.slots.forEach(s => {
+                    if (s) used[s] = (used[s] || 0) + 1;
+                });
+            }
+            return used;
+        }
 
         window.placeUnitToSlot = function(unitId, slotIdx) {
             const usedCounts = getUsedUnitCounts();
@@ -1670,14 +1684,6 @@
             renderStoreProducts(val);
         };
 
-        function getUsedUnitCounts() {
-            const used = {};
-            window.userData.slots.forEach(s => {
-                if (s) used[s] = (used[s] || 0) + 1;
-            });
-            return used;
-        }
-
         function render16SlotsDepot() {
             const invContainer = document.getElementById('depotInventoryScroll');
             const gridContainer = document.getElementById('slotsGridContainer');
@@ -1771,20 +1777,24 @@
             let totalMass = 0;
             let totalTE = 0;
 
-            window.userData.slots.forEach(slotUnitId => {
-                if (slotUnitId) {
-                    const item = window.fleetStoreData.find(f => f.id === slotUnitId);
-                    if (item) {
-                        totalMass += item.mass;
-                        totalTE += item.te;
+            if (window.userData && Array.isArray(window.userData.slots)) {
+                window.userData.slots.forEach(slotUnitId => {
+                    if (slotUnitId) {
+                        const item = window.fleetStoreData.find(f => f.id === slotUnitId);
+                        if (item) {
+                            totalMass += item.mass;
+                            totalTE += item.te;
+                        }
                     }
-                }
-            });
+                });
+            }
 
             const minTE = Math.round(totalMass * 0.28);
 
-            document.getElementById('depotCalcMass').innerText = `${totalMass} Ton`;
-            document.getElementById('depotCalcTE').innerText = `${totalTE} kN`;
+            const massEl = document.getElementById('depotCalcMass');
+            const teEl = document.getElementById('depotCalcTE');
+            if (massEl) massEl.innerText = `${totalMass} Ton`;
+            if (teEl) teEl.innerText = `${totalTE} kN`;
 
             return { totalMass, totalTE, minTE };
         }
@@ -1806,11 +1816,11 @@
             state.isSanderActive = !state.isSanderActive;
             const btn = document.getElementById('btnSander');
             if (state.isSanderActive) {
-                btn.classList.add('active');
+                if (btn) btn.classList.add('active');
                 if (sanderStatus) sanderStatus.style.display = 'flex';
                 playAirHissSound();
             } else {
-                btn.classList.remove('active');
+                if (btn) btn.classList.remove('active');
                 if (sanderStatus) sanderStatus.style.display = 'none';
             }
         };
@@ -1897,7 +1907,6 @@
             let dynamicTargetRpm = targetBaseRpm + state.rpmNoiseOffset;
             state.engineRpm += (dynamicTargetRpm - state.engineRpm) * (2.0 * dt);
 
-            /* HSD FUEL CONSUMPTION PHYSICS LOGIC */
             if (state.currentHsdLiter > 0) {
                 const consRate = curConfig.hsdRateLps;
                 const hsdLoss = consRate * dt;
@@ -1930,7 +1939,7 @@
             if (state.brakeApplyLagTimer > 0) state.brakeApplyLagTimer = Math.max(0, state.brakeApplyLagTimer - dt);
 
             const activeMode = autoBrakeModes[state.autoBrakeHandlePos];
-            let targetBp = activeMode.bp;
+            let targetBp = activeMode ? activeMode.bp : 5.0;
             const bpRate = state.autoBrakeHandlePos === 79 ? 8.0 : 4.0;
 
             if (state.brakePipeBar > targetBp) state.brakePipeBar = Math.max(targetBp, state.brakePipeBar - bpRate * dt);
@@ -2025,11 +2034,10 @@
             let totalDecel = (totalBrakeForce + state.fDavis) / Math.max(1, state.massTons);
             state.estimatedStoppingDistance = (totalDecel > 0.05 && state.speedMS > 0.1) ? (Math.pow(state.speedMS, 2) / (2 * totalDecel)) : 0;
 
-            /* BATAS BERHENTI S5 (MAJU 15 METER DARI PERON) & TRIGGER RESULT HALT */
             if (stations && state.currentStationIdx < stations.length) {
                 const currSt = getTargetStation();
                 const startPlatform = currSt.pos;
-                const endPlatform = currSt.pos + currSt.length + 15; // BATAS BERHENTI S5 (+15m)
+                const endPlatform = currSt.pos + currSt.length + 15;
 
                 if (state.speedKmH === 0 && state.positionMeters >= startPlatform && state.positionMeters <= endPlatform) {
                     if (!currSt.rewardClaimed) {
@@ -2044,7 +2052,7 @@
 
                         const legDistKm = (state.positionMeters - state.legStartDistance) / 1000;
                         const legTimeSec = state.simClockSeconds - state.legStartTimeSec;
-                        const accuracyTxt = isPerfect ? "Sempurna Tepat S5 (100% Bonus)" : "Bagus (Stop Peron S5)";
+                        const accuracyTxt = isPerfect ? "Sempurna Tepat S10G (100% Bonus)" : "Bagus (Stop Peron S10G)";
 
                         showStationResultModal(totalReward, accuracyTxt, legDistKm, state.hsdConsumedInLeg, legTimeSec);
 
@@ -2076,7 +2084,7 @@
             playAirHissSound();
 
             const activeMode = autoBrakeModes[state.autoBrakeHandlePos];
-            if (dispBrakeLabel) {
+            if (dispBrakeLabel && activeMode) {
                 dispBrakeLabel.innerText = `${activeMode.code}`;
                 dispBrakeLabel.style.color = activeMode.color;
             }
@@ -2140,7 +2148,7 @@
 
             const currSt = getTargetStation();
             const startPlatform = currSt.pos;
-            const endPlatform = currSt.pos + currSt.length + 15; // BATAS S5 (+15m)
+            const endPlatform = currSt.pos + currSt.length + 15;
 
             if (dispNextStationName) dispNextStationName.innerText = `St. ${currSt.name}`;
 
@@ -2148,15 +2156,15 @@
                 const distToFront = startPlatform - state.positionMeters;
                 const formatDist = distToFront >= 1000 ? `${(distToFront / 1000).toFixed(2)} km` : `${distToFront.toFixed(0)} m`;
                 if (dispNextStationDist) dispNextStationDist.innerText = formatDist;
-                if (bannerStationText) bannerStationText.innerText = `Tujuan: St. ${currSt.name} — Batas S5: ${formatDist}`;
+                if (bannerStationText) bannerStationText.innerText = `Tujuan: St. ${currSt.name} — Batas S10G: ${formatDist}`;
             } else if (state.positionMeters >= startPlatform && state.positionMeters <= endPlatform) {
                 const distToEnd = endPlatform - state.positionMeters;
-                if (dispNextStationDist) dispNextStationDist.innerText = `${distToEnd.toFixed(0)}m (S5)`;
-                if (bannerStationText) bannerStationText.innerText = `⚠️ PERON ST. ${currSt.name.toUpperCase()} — Batas S5: ${distToEnd.toFixed(0)}m`;
+                if (dispNextStationDist) dispNextStationDist.innerText = `${distToEnd.toFixed(0)}m (S10G)`;
+                if (bannerStationText) bannerStationText.innerText = `⚠️ PERON ST. ${currSt.name.toUpperCase()} — Batas S10G: ${distToEnd.toFixed(0)}m`;
             } else {
                 const distPassed = state.positionMeters - endPlatform;
                 if (dispNextStationDist) dispNextStationDist.innerText = `+${distPassed.toFixed(0)}m Lewat`;
-                if (bannerStationText) bannerStationText.innerText = `❌ LEWAT BATAS S5 (+${distPassed.toFixed(0)}m)`;
+                if (bannerStationText) bannerStationText.innerText = `❌ LEWAT BATAS S10G (+${distPassed.toFixed(0)}m)`;
             }
 
             if (dispEstStoppingDist) dispEstStoppingDist.innerText = `${state.estimatedStoppingDistance.toFixed(1)} m`;
@@ -2205,7 +2213,6 @@
             const pixelsPerMeter = 6;
             const trainX = width * 0.35;
 
-            /* DRAWING STATIONS & BATAS BERHENTI S5 SIGNAL MARKER */
             if (stations && stations.length > 0) {
                 stations.forEach((st) => {
                     const stationX = trainX + (st.pos - state.positionMeters) * pixelsPerMeter;
@@ -2215,11 +2222,10 @@
                         ctx.fillRect(stationX, railY - 12, platformWidth, 12);
                         ctx.fillStyle = '#eab308'; ctx.fillRect(stationX, railY - 12, platformWidth, 2);
                         
-                        /* PAPAN BATAS BERHENTI S5 (MAJU 15 METER DARI PERON) */
                         const s5X = stationX + platformWidth + (15 * pixelsPerMeter);
                         ctx.fillStyle = '#ef4444'; ctx.fillRect(s5X, railY - 28, 4, 16);
                         ctx.fillStyle = '#fbbf24'; ctx.beginPath(); ctx.arc(s5X + 2, railY - 30, 6, 0, Math.PI * 2); ctx.fill();
-                        ctx.fillStyle = '#000'; ctx.font = 'bold 6px system-ui'; ctx.textAlign = 'center'; ctx.fillText('S5', s5X + 2, railY - 28);
+                        ctx.fillStyle = '#000'; ctx.font = 'bold 6px system-ui'; ctx.textAlign = 'center'; ctx.fillText('S10G', s5X + 2, railY - 28);
 
                         const bldX = stationX + 30;
                         ctx.fillStyle = '#f8fafc'; ctx.fillRect(bldX, railY - 50, 90, 38);
@@ -2234,7 +2240,6 @@
                 });
             }
 
-            /* DRAWING ANIMASI PERSILANGAN KERETA (X) */
             if (state.crossingActive) {
                 const crossY = railY - 42;
                 ctx.fillStyle = '#f59e0b';
@@ -2251,7 +2256,9 @@
             const locoWidth = 100; const carWidth = 75; const trainY = railY - 22;
             ctx.save(); ctx.translate(trainX, trainY);
 
-            const activeUnitsInSlots = window.userData.slots.filter(s => s !== null);
+            const activeSlotsArr = (window.userData && Array.isArray(window.userData.slots)) ? window.userData.slots : [];
+            const activeUnitsInSlots = activeSlotsArr.filter(s => s !== null && s !== undefined);
+
             if (activeUnitsInSlots.length > 0) {
                 activeUnitsInSlots.forEach((unitId, idx) => {
                     const unitX = -idx * (carWidth + 6);
