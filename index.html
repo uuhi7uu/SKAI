@@ -3,242 +3,498 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Simulator Dinamika Kereta Api Pro v4.8</title>
+    <title>Simulator Dinamika Kereta Api Pro v7.5 - Firebase Live</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-        body { background-color: #0f172a; color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; user-select: none; }
         
+        body { 
+            background-color: #020617; color: #f8fafc; min-height: 100vh; 
+            display: flex; flex-direction: column; align-items: center; user-select: none; 
+        }
+        
+        .app-wrapper {
+            width: 100%; max-width: 480px; background-color: #0f172a; min-height: 100vh;
+            display: flex; flex-direction: column; border-left: 1px solid #1e293b; border-right: 1px solid #1e293b;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8); position: relative; overflow-x: hidden;
+        }
+
         .hidden { display: none !important; }
+
+        .fade-in { animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* AUTH SCREEN LAYOUT */
+        #authScreen {
+            padding: 24px 16px; width: 100%; display: flex; flex-direction: column;
+            gap: 14px; align-items: center; justify-content: center; min-height: 100vh;
+        }
+        .auth-card {
+            background: #1e293b; border: 1px solid #334155; border-radius: 12px;
+            padding: 16px; width: 100%; display: flex; flex-direction: column; gap: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+        }
+        .auth-card h2 { font-size: 1.1rem; color: #fff; text-align: center; }
+        .input-box { display: flex; flex-direction: column; gap: 4px; }
+        .input-box label { font-size: 0.65rem; color: #94a3b8; font-weight: bold; }
+        .input-box input, .input-box textarea {
+            background: #0f172a; border: 1px solid #334155; border-radius: 6px;
+            padding: 8px; color: #fff; font-size: 0.75rem; outline: none;
+        }
+        .input-box input:focus, .input-box textarea:focus { border-color: #3b82f6; }
+
+        /* UNIVERSAL MONEY BAR DISPLAY */
+        .money-badge-global {
+            background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399;
+            padding: 3px 8px; border-radius: 12px; font-size: 0.65rem; font-family: monospace; font-weight: bold;
+            display: inline-flex; align-items: center; gap: 4px; position: relative;
+        }
+
+        .floating-money-gain {
+            position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+            background: #10b981; color: #fff; padding: 2px 8px; border-radius: 10px;
+            font-size: 0.65rem; font-weight: bold; font-family: monospace;
+            box-shadow: 0 4px 12px rgba(16,185,129,0.5); pointer-events: none;
+            opacity: 0; z-index: 100; white-space: nowrap;
+        }
+        .floating-money-gain.show-float {
+            animation: floatUp 2.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        @keyframes floatUp {
+            0% { opacity: 0; transform: translate(-50%, 0); }
+            15% { opacity: 1; transform: translate(-50%, 4px); }
+            80% { opacity: 1; transform: translate(-50%, 12px); }
+            100% { opacity: 0; transform: translate(-50%, 20px); }
+        }
 
         /* MAIN MENU LAYOUT CARD */
         #mainMenuScreen {
-            padding: 20px 16px; max-width: 600px; margin: 0 auto; width: 100%;
-            display: flex; flex-direction: column; gap: 20px; align-items: center;
+            padding: 16px 12px; width: 100%;
+            display: flex; flex-direction: column; gap: 12px; align-items: center;
         }
-        .menu-header-box { text-align: center; margin-top: 10px; margin-bottom: 10px; }
-        .menu-header-box i { font-size: 3rem; color: #60a5fa; margin-bottom: 12px; }
-        .menu-header-box h1 { font-size: 1.8rem; font-weight: 800; color: #fff; line-height: 1.2; }
-        .menu-header-box p { font-size: 0.85rem; color: #94a3b8; margin-top: 8px; line-height: 1.4; }
+        .menu-header-box { text-align: center; margin-top: 6px; margin-bottom: 2px; }
+        .menu-header-box i { font-size: 2.5rem; color: #60a5fa; margin-bottom: 8px; }
+        .menu-header-box h1 { font-size: 1.4rem; font-weight: 800; color: #fff; line-height: 1.2; }
+        .menu-header-box p { font-size: 0.75rem; color: #94a3b8; margin-top: 4px; line-height: 1.3; }
+
+        .user-bar {
+            width: 100%; background: #1e293b; border: 1px solid #334155; border-radius: 8px;
+            padding: 6px 10px; display: flex; justify-content: space-between; align-items: center;
+            font-size: 0.68rem; color: #cbd5e1;
+        }
+
+        .menu-top-btns {
+            display: flex; justify-content: center; align-items: center; gap: 6px;
+            width: 100%; margin: 2px 0; flex-wrap: wrap;
+        }
+
+        .btn-store-compact, .btn-depot-compact, .btn-admin-compact, .btn-schedule-compact {
+            border: none; padding: 6px 10px; border-radius: 20px; font-weight: bold; font-size: 0.68rem;
+            cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+            transition: all 0.2s ease; flex: 1; color: #fff;
+        }
+        .btn-store-compact { background-color: #059669; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3); }
+        .btn-depot-compact { background-color: #7c3aed; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3); }
+        .btn-schedule-compact { background-color: #0284c7; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3); }
+        .btn-admin-compact { background-color: #dc2626; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3); }
 
         .mode-card {
-            background-color: #1e293b; border: 1px solid #2563eb; border-radius: 16px;
-            padding: 20px; width: 100%; display: flex; flex-direction: column; gap: 14px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3); position: relative;
+            background-color: #1e293b; border: 1px solid #2563eb; border-radius: 12px;
+            padding: 14px; width: 100%; display: flex; flex-direction: column; gap: 10px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3); position: relative;
         }
-        .mode-card.disabled { border-color: #334155; opacity: 0.75; }
 
         .mode-icon-box {
-            width: 50px; height: 50px; background: rgba(37, 99, 235, 0.2); border-radius: 12px;
+            width: 42px; height: 42px; background: rgba(37, 99, 235, 0.2); border-radius: 10px;
             display: flex; align-items: center; justify-content: center;
         }
-        .mode-icon-box i { font-size: 1.5rem; color: #60a5fa; }
-        .mode-card.disabled .mode-icon-box { background: rgba(51, 65, 85, 0.4); }
-        .mode-card.disabled .mode-icon-box i { color: #64748b; }
+        .mode-icon-box i { font-size: 1.2rem; color: #60a5fa; }
 
-        .mode-card h2 { font-size: 1.25rem; font-weight: bold; color: #fff; }
-        .mode-card p { font-size: 0.8rem; color: #94a3b8; line-height: 1.5; }
+        .mode-card h2 { font-size: 1.1rem; font-weight: bold; color: #fff; }
+        .mode-card p { font-size: 0.72rem; color: #94a3b8; line-height: 1.4; }
 
         .btn-enter-sim {
-            background-color: #2563eb; color: #fff; border: none; padding: 12px;
-            border-radius: 8px; font-weight: bold; font-size: 0.85rem; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            transition: all 0.2s; margin-top: 6px;
-        }
-        .btn-enter-sim:active { transform: scale(0.97); background-color: #1d4ed8; }
-
-        .badge-coming-soon {
-            position: absolute; top: 16px; left: 16px; background: #d97706; color: #fff;
-            font-size: 0.65rem; font-weight: bold; padding: 3px 8px; border-radius: 4px;
-            display: flex; align-items: center; gap: 4px; text-transform: uppercase;
+            background-color: #2563eb; color: #fff; border: none; padding: 10px;
+            border-radius: 8px; font-weight: bold; font-size: 0.8rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            transition: background-color 0.2s ease, transform 0.1s ease; margin-top: 4px;
         }
 
-        /* HEADER COMPACT */
-        header { background-color: #1e293b; border-bottom: 1px solid #334155; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; }
-        .logo-box { display: flex; align-items: center; gap: 8px; }
-        .logo-box i { font-size: 1.2rem; color: #60a5fa; }
-        .logo-box h1 { font-size: 0.95rem; font-weight: bold; color: #fff; }
-        .logo-box p { font-size: 0.65rem; color: #94a3b8; }
+        /* HEADER COMPACT FIT MOBILE */
+        header { 
+            background-color: #1e293b; border-bottom: 1px solid #334155; 
+            padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; 
+        }
+        .logo-row { display: flex; justify-content: space-between; align-items: center; }
+        .logo-box { display: flex; align-items: center; gap: 6px; }
+        .logo-box i { font-size: 1.1rem; color: #60a5fa; }
+        .logo-box h1 { font-size: 0.85rem; font-weight: bold; color: #fff; }
         
-        .header-btns { display: flex; gap: 6px; flex-wrap: wrap; }
-        .btn { border: none; padding: 5px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; color: #fff; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s; }
-        .btn:active { transform: scale(0.97); }
+        .header-btns { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+        .btn { border: none; padding: 5px 2px; border-radius: 5px; font-size: 0.6rem; font-weight: 600; color: #fff; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; transition: all 0.2s ease; }
+        .btn i { font-size: 0.7rem; }
+        .btn:active { transform: scale(0.95); }
         .btn-amber { background-color: #d97706; }
         .btn-rose { background-color: #e11d48; }
         .btn-blue { background-color: #2563eb; }
         .btn-purple { background-color: #7c3aed; }
         .btn-emerald { background-color: #059669; }
         .btn-cyan { background-color: #0891b2; }
-        .btn-sander { background-color: #d97706; padding: 6px 12px; font-size: 0.75rem; font-weight: bold; border-radius: 6px; }
+        .btn-red { background-color: #dc2626; }
+        .btn-sander { background-color: #d97706; padding: 4px 8px; font-size: 0.65rem; font-weight: bold; border-radius: 5px; }
         .btn-sander.active { background-color: #10b981; box-shadow: 0 0 8px rgba(16,185,129,0.5); }
         
-        main { flex: 1; padding: 8px; display: grid; grid-template-columns: 1fr; gap: 8px; max-width: 1600px; margin: 0 auto; width: 100%; }
-        @media (min-width: 1024px) { main { grid-template-columns: 7fr 5fr; } }
+        main { flex: 1; padding: 6px; display: flex; flex-direction: column; gap: 6px; width: 100%; }
         
-        .card { background-color: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 8px; }
-        .card-title { font-size: 0.7rem; font-weight: bold; color: #cbd5e1; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; }
+        .card { background-color: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 6px 8px; display: flex; flex-direction: column; gap: 6px; }
+        .card-title { font-size: 0.65rem; font-weight: bold; color: #cbd5e1; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; }
         
-        /* CANVAS VISUALITAS DENGAN OVERLAY TELEMETRI */
-        .canvas-container { position: relative; width: 100%; border-radius: 8px; overflow: hidden; border: 1px solid #334155; background-color: #020617; height: 230px; }
-        canvas#trainCanvas { width: 100%; height: 230px; display: block; }
+        .canvas-container { position: relative; width: 100%; border-radius: 6px; overflow: hidden; border: 1px solid #334155; background-color: #020617; height: 170px; }
+        canvas#trainCanvas { width: 100%; height: 170px; display: block; }
 
         .canvas-telemetry-overlay {
-            position: absolute; top: 8px; left: 8px; display: flex; gap: 6px; z-index: 10;
+            position: absolute; top: 6px; left: 6px; display: flex; gap: 4px; z-index: 10;
         }
         .overlay-badge {
-            background: rgba(15, 23, 42, 0.82); border: 1px solid rgba(51, 65, 85, 0.8);
-            backdrop-filter: blur(4px); padding: 3px 8px; border-radius: 6px;
-            display: flex; align-items: center; gap: 5px; font-family: monospace; font-size: 0.75rem; font-weight: bold;
+            background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(51, 65, 85, 0.8);
+            backdrop-filter: blur(4px); padding: 2px 6px; border-radius: 4px;
+            display: flex; align-items: center; gap: 4px; font-family: monospace; font-size: 0.68rem; font-weight: bold;
         }
 
-        .alert-box { position: absolute; bottom: 8px; left: 8px; background: rgba(225, 29, 72, 0.9); color: #fff; padding: 3px 8px; border-radius: 5px; font-size: 0.65rem; font-weight: bold; display: none; align-items: center; gap: 4px; animation: pulse 0.8s infinite alternate; }
-        .sander-status { position: absolute; bottom: 8px; right: 8px; background: rgba(16, 185, 129, 0.9); color: #fff; padding: 3px 8px; border-radius: 5px; font-size: 0.65rem; font-weight: bold; display: none; align-items: center; gap: 4px; }
+        .alert-box { position: absolute; bottom: 6px; left: 6px; background: rgba(225, 29, 72, 0.9); color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 0.6rem; font-weight: bold; display: none; align-items: center; gap: 4px; }
+        .sander-status { position: absolute; bottom: 6px; right: 6px; background: rgba(16, 185, 129, 0.9); color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 0.6rem; font-weight: bold; display: none; align-items: center; gap: 4px; }
+        .crossing-banner { position: absolute; top: 32px; left: 50%; transform: translateX(-50%); background: rgba(217, 119, 6, 0.95); color: #fff; padding: 3px 10px; border-radius: 20px; font-size: 0.62rem; font-weight: bold; display: none; align-items: center; gap: 6px; border: 1px solid #fde047; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 20; }
         
-        .station-banner { background: #0f172a; border: 1px solid #0284c7; color: #38bdf8; padding: 6px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-        @keyframes pulse { from { opacity: 0.6; } to { opacity: 1; } }
+        .station-banner { background: #0f172a; border: 1px solid #0284c7; color: #38bdf8; padding: 5px 8px; border-radius: 5px; font-size: 0.68rem; font-weight: bold; display: flex; align-items: center; justify-content: space-between; gap: 6px; }
 
-        /* TELEMETRI MINI COMPACT */
-        .telemetry-mini-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-        @media (min-width: 640px) { .telemetry-mini-grid { grid-template-columns: repeat(6, 1fr); } }
-        .telebox-mini { background-color: rgba(15, 23, 42, 0.7); border: 1px solid rgba(51, 65, 85, 0.7); padding: 4px 6px; border-radius: 6px; text-align: center; }
-        .telebox-mini label { font-size: 0.55rem; color: #94a3b8; display: block; margin-bottom: 1px; }
-        .telebox-mini span { font-family: monospace; font-size: 0.75rem; font-weight: bold; }
+        .telemetry-mini-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+        .telebox-mini { background-color: rgba(15, 23, 42, 0.7); border: 1px solid rgba(51, 65, 85, 0.7); padding: 3px 4px; border-radius: 4px; text-align: center; }
+        .telebox-mini label { font-size: 0.5rem; color: #94a3b8; display: block; margin-bottom: 1px; }
+        .telebox-mini span { font-family: monospace; font-size: 0.68rem; font-weight: bold; }
 
-        .control-group { background-color: rgba(15, 23, 42, 0.6); padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(51, 65, 85, 0.6); display: flex; flex-direction: column; gap: 4px; }
-        .control-label { display: flex; justify-content: space-between; font-size: 0.75rem; color: #cbd5e1; font-weight: 600; }
+        .control-group { background-color: rgba(15, 23, 42, 0.6); padding: 5px 6px; border-radius: 5px; border: 1px solid rgba(51, 65, 85, 0.6); display: flex; flex-direction: column; gap: 3px; }
+        .control-label { display: flex; justify-content: space-between; font-size: 0.68rem; color: #cbd5e1; font-weight: 600; }
         
         input[type=range] {
             width: 100%; height: 5px; background: #334155; border-radius: 4px; outline: none;
             touch-action: none !important; -webkit-touch-callout: none !important; -webkit-user-select: none !important; user-select: none !important;
         }
         input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: #3b82f6; cursor: pointer; box-shadow: 0 0 5px rgba(0,0,0,0.5);
+            -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #3b82f6; cursor: pointer;
         }
         
-        select, input[type=text] { width: 100%; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; padding: 6px; border-radius: 6px; font-size: 0.7rem; outline: none; }
+        select, input[type=text], input[type=email], input[type=password] { width: 100%; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; padding: 5px; border-radius: 5px; font-size: 0.68rem; outline: none; }
         
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 150; display: flex; align-items: center; justify-content: center; padding: 16px; }
-        .modal-content { background: #1e293b; border: 1px solid #334155; border-radius: 12px; max-width: 500px; width: 100%; padding: 16px; display: flex; flex-direction: column; gap: 12px; max-height: 90vh; overflow-y: auto; }
+        .modal { 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); 
+            z-index: 150; display: flex; align-items: center; justify-content: center; padding: 10px;
+            opacity: 0; visibility: hidden; transition: opacity 0.25s ease, visibility 0.25s ease;
+        }
+        .modal.show { opacity: 1; visibility: visible; }
+        .modal-content { 
+            background: #1e293b; border: 1px solid #334155; border-radius: 12px; max-width: 460px; width: 100%; 
+            padding: 10px; display: flex; flex-direction: column; gap: 6px; max-height: 90vh; overflow-y: auto;
+            transform: scale(0.92); transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .modal.show .modal-content { transform: scale(1); }
 
-        .ai-box { background: rgba(15, 23, 42, 0.9); border: 1px solid #7c3aed; border-radius: 8px; padding: 8px; font-size: 0.7rem; color: #e2e8f0; line-height: 1.4; display: flex; flex-direction: column; gap: 4px; }
-        .ai-badge { font-size: 0.6rem; font-weight: bold; background: #7c3aed; color: #fff; padding: 2px 6px; border-radius: 4px; width: fit-content; display: flex; align-items: center; gap: 4px; }
-        .ai-chat-input { display: flex; gap: 6px; margin-top: 4px; }
+        .store-header-bar {
+            display: flex; justify-content: space-between; align-items: center; gap: 6px;
+            border-bottom: 1px solid #334155; padding-bottom: 4px;
+        }
 
-        .changelog-card { background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; border-radius: 8px; padding: 8px 10px; font-size: 0.7rem; color: #cbd5e1; }
-        .changelog-card h4 { color: #38bdf8; font-size: 0.75rem; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
-        .changelog-card ul { padding-left: 16px; line-height: 1.5; }
+        .search-box-wrap { position: relative; width: 100%; }
+        .search-box-wrap input {
+            padding-left: 24px; background: #0f172a; border: 1px solid #334155; border-radius: 5px;
+            font-size: 0.65rem; color: #fff; height: 26px;
+        }
+        .search-box-wrap i { position: absolute; left: 7px; top: 7px; font-size: 0.65rem; color: #64748b; }
+
+        .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; }
+
+        .product-card {
+            background: rgba(15, 23, 42, 0.85); border: 1px solid #334155; border-radius: 6px;
+            padding: 5px; display: flex; flex-direction: column; gap: 3px; justify-content: space-between;
+        }
+        .product-card.owned { border-color: #10b981; background: rgba(16, 185, 129, 0.08); }
+
+        .product-thumb {
+            width: 100%; height: 38px; background: #0f172a; border-radius: 4px;
+            display: flex; align-items: center; justify-content: center; border: 1px solid #1e293b;
+        }
+        .product-thumb i { font-size: 1.2rem; color: #60a5fa; }
+
+        .product-title { font-size: 0.68rem; font-weight: bold; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .product-price { font-size: 0.58rem; font-weight: bold; color: #facc15; font-family: monospace; }
+        .product-desc { font-size: 0.55rem; color: #94a3b8; line-height: 1.2; height: 22px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+        .product-spec-row {
+            display: flex; justify-content: space-between; font-size: 0.52rem; font-family: monospace; color: #38bdf8;
+            background: #0f172a; padding: 2px 3px; border-radius: 3px;
+        }
+
+        .btn-store-action {
+            width: 100%; justify-content: center; padding: 2px 3px; font-size: 0.55rem;
+            margin-top: 1px; min-height: 18px; border-radius: 3px; font-weight: bold;
+        }
+
+        /* TAMPILAN DEPO 16 SLOT ASSEMBLY */
+        .depot-inventory-scroll {
+            display: flex; gap: 6px; overflow-x: auto; padding: 4px 2px;
+            background: #0f172a; border: 1px solid #334155; border-radius: 6px;
+        }
+        .depot-inv-item {
+            min-width: 65px; background: #1e293b; border: 1px solid #475569; border-radius: 6px;
+            padding: 4px; text-align: center; cursor: grab; transition: all 0.2s ease;
+        }
+        .depot-inv-item.selected { border-color: #38bdf8; box-shadow: 0 0 8px rgba(56, 189, 248, 0.4); }
+
+        .slots-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
+            max-height: 200px; overflow-y: auto; padding-right: 2px;
+        }
+        .slot-box {
+            background: #0f172a; border: 1px dashed #475569; border-radius: 6px;
+            min-height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            position: relative; padding: 2px; transition: border-color 0.2s ease;
+        }
+        .slot-box.drag-over { border-color: #38bdf8; background: rgba(56, 189, 248, 0.1); }
+        .slot-box.filled { border-style: solid; border-color: #10b981; background: rgba(16, 185, 129, 0.08); }
+        
+        .slot-label { font-size: 0.5rem; color: #64748b; font-weight: bold; position: absolute; top: 2px; left: 4px; }
+        .slot-remove-btn {
+            position: absolute; top: 1px; right: 2px; color: #ef4444; font-size: 0.55rem;
+            cursor: pointer; padding: 2px;
+        }
+
+        .depot-telemetry-box {
+            background: rgba(15, 23, 42, 0.9); border: 1px solid #7c3aed; border-radius: 6px;
+            padding: 8px; display: flex; flex-direction: column; gap: 4px;
+        }
+        .depot-stat-line { display: flex; justify-content: space-between; font-size: 0.68rem; color: #cbd5e1; }
+
+        /* TIMETABLE TABLE STYLE */
+        .timetable-table {
+            width: 100%; border-collapse: collapse; font-size: 0.65rem; text-align: left;
+        }
+        .timetable-table th { background: #0f172a; color: #38bdf8; padding: 5px; border: 1px solid #334155; }
+        .timetable-table td { padding: 4px 5px; border: 1px solid #334155; color: #cbd5e1; }
+        .timetable-table tr:nth-child(even) { background: rgba(15, 23, 42, 0.5); }
+        .timetable-table tr.active-st { background: rgba(56, 189, 248, 0.15); border-left: 3px solid #38bdf8; }
+
+        /* ADMIN PANEL UI */
+        .admin-box {
+            background: rgba(220, 38, 38, 0.1); border: 1px solid #ef4444; border-radius: 8px;
+            padding: 8px; display: flex; flex-direction: column; gap: 6px;
+        }
+        .admin-box h4 { font-size: 0.75rem; color: #f87171; display: flex; align-items: center; gap: 4px; }
+
+        .request-card {
+            background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 6px;
+            display: flex; flex-direction: column; gap: 4px; font-size: 0.65rem;
+        }
+
+        /* RESULT SUMMARY MODAL */
+        .result-stat-card {
+            background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+            padding: 8px; display: flex; flex-direction: column; gap: 4px;
+        }
+        .result-row {
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 0.7rem; color: #cbd5e1;
+        }
+        .result-row b { color: #fff; font-family: monospace; }
+
+        /* FUEL TANK PROGRESS BAR */
+        .fuel-bar-wrap {
+            width: 100%; height: 10px; background: #0f172a; border-radius: 5px;
+            border: 1px solid #334155; overflow: hidden; position: relative; margin-top: 2px;
+        }
+        .fuel-bar-fill {
+            height: 100%; background: linear-gradient(90deg, #f59e0b, #10b981);
+            width: 100%; transition: width 0.3s ease;
+        }
     </style>
 </head>
 <body oncontextmenu="return false;">
 
-    <!-- 1. TAMPILAN MAIN MENU UTAMA -->
-    <div id="mainMenuScreen">
-        <div class="menu-header-box">
-            <i class="fa-solid fa-train"></i>
-            <h1>Simulator Dinamika Kereta Api Pro</h1>
-            <p>Pilih mode permainan untuk memulai simulasi pengereman dan dinamika fisik lokomotif</p>
-        </div>
+    <div class="app-wrapper">
 
-        <div class="mode-card">
-            <div class="mode-icon-box">
-                <i class="fa-solid fa-gamepad"></i>
-            </div>
-            <h2>Simulator Masinis 2D</h2>
-            <p>Fitur V4.8: Dynamic API Key Input (Simpan aman di HP & terhindar total dari pemblokiran GitHub).</p>
-            <button onclick="startSimulatorApp()" class="btn-enter-sim">
-                <i class="fa-solid fa-play"></i> Masuk Simulasi 2D
-            </button>
-        </div>
-
-        <div class="mode-card disabled">
-            <div class="badge-coming-soon">
-                <i class="fa-solid fa-clock"></i> Coming Soon
-            </div>
-            <div class="mode-icon-box" style="margin-top: 14px;">
-                <i class="fa-solid fa-cubes"></i>
-            </div>
-            <h2>Simulator PPKA 2D</h2>
-            <p>Mode pengoperasian pengatur perjalanan kereta api (PPKA): Pengaturan wesel, penataan jadwal perjalanan stasiun, serta penyiapan sinyal transmisi persinyalan.</p>
-        </div>
-    </div>
-
-    <!-- 2. TAMPILAN APLIKASI SIMULATOR UTAMA -->
-    <div id="simulatorAppScreen" class="hidden">
-        <header>
-            <div class="logo-box">
+        <!-- 0. SCREEN AUTH LOGIN / REGISTER -->
+        <div id="authScreen" class="fade-in">
+            <div class="menu-header-box">
                 <i class="fa-solid fa-train"></i>
-                <div>
-                    <h1>Train Dynamics Pro v4.8</h1>
-                    <p>Dynamic API Key Manager & Local Storage Storage</p>
+                <h1>Train Dynamics Pro v7.5</h1>
+                <p>Firebase Realtime Cloud Database Connected ⚡</p>
+            </div>
+
+            <div class="auth-card">
+                <h2><i class="fa-solid fa-user-lock"></i> Login / Register Cloud</h2>
+                
+                <div class="input-box">
+                    <label>Email Pemain / Admin:</label>
+                    <input type="email" id="authEmail" value="" placeholder="nama@email.com">
+                </div>
+
+                <div class="input-box">
+                    <label>Password:</label>
+                    <input type="password" id="authPassword" value="" placeholder="masukkan password">
+                </div>
+
+                <div style="display:flex; gap:6px; margin-top:4px;">
+                    <button onclick="handleLogin()" class="btn btn-blue" style="flex:1; padding:8px; font-weight:bold;">Login</button>
+                    <button onclick="handleRegister()" class="btn btn-emerald" style="flex:1; padding:8px; font-weight:bold;">Register</button>
                 </div>
             </div>
-            <div class="header-btns">
-                <button onclick="confirmToMainMenu()" class="btn btn-blue"><i class="fa-solid fa-house"></i> Menu</button>
-                <button onclick="startBrakeTest()" class="btn btn-cyan"><i class="fa-solid fa-stopwatch-20"></i> Tes Rem</button>
-                <button onclick="requestAiAudit()" class="btn btn-purple"><i class="fa-solid fa-brain"></i> Copilot</button>
-                <button onclick="requestAiAnnouncer()" class="btn btn-emerald"><i class="fa-solid fa-bullhorn"></i> Voice</button>
-                <button onclick="changeApiKeyPrompt()" class="btn btn-amber"><i class="fa-solid fa-key"></i> Set Key</button>
-                <button onclick="resetSimulation()" class="btn btn-rose"><i class="fa-solid fa-rotate-right"></i> Reset</button>
-            </div>
-        </header>
+        </div>
 
-        <main>
-            <section style="display: flex; flex-direction: column; gap: 8px;">
-                <!-- VISUAL KABIN CANVAS (BAGIAN ATAS) -->
+        <!-- 1. TAMPILAN MAIN MENU UTAMA -->
+        <div id="mainMenuScreen" class="hidden fade-in">
+            <div class="user-bar">
+                <span><i class="fa-solid fa-user-check" style="color:#10b981;"></i> <b id="displayUserEmail">user@mail.com</b></span>
+                
+                <!-- MONEY BAR MENU UTAMA -->
+                <div class="money-badge-global">
+                    <i class="fa-solid fa-coins" style="color:#facc15;"></i>
+                    <span id="menuMoneyDisplay">Rp 1.500.000.000</span>
+                    <div id="menuMoneyGainFloat" class="floating-money-gain">+Rp 0</div>
+                </div>
+
+                <button onclick="handleLogout()" class="btn btn-rose" style="padding:2px 6px; font-size:0.55rem;"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+            </div>
+
+            <div class="menu-header-box">
+                <i class="fa-solid fa-train"></i>
+                <h1>Simulator Dinamika Kereta Api Pro</h1>
+                <p>PLB 431A Commuter Line Penataran (SB - ML) & Sistem Pusdalopka Live Sync</p>
+            </div>
+
+            <div class="menu-top-btns">
+                <button onclick="openScheduleModal()" class="btn-schedule-compact">
+                    <i class="fa-solid fa-calendar-days"></i> Jadwal
+                </button>
+                <button onclick="openStoreModal()" class="btn-store-compact">
+                    <i class="fa-solid fa-store"></i> Toko
+                </button>
+                <button onclick="openDepotModal()" class="btn-depot-compact">
+                    <i class="fa-solid fa-warehouse"></i> Depo
+                </button>
+                <button id="btnAdminMenu" onclick="openAdminModal()" class="btn-admin-compact hidden">
+                    <i class="fa-solid fa-user-shield"></i> Admin
+                </button>
+            </div>
+
+            <div class="mode-card">
+                <div class="mode-icon-box">
+                    <i class="fa-solid fa-gamepad"></i>
+                </div>
+                <h2>PLB 431A Commuter Line Penataran</h2>
+                <p>Surabaya Kota ➔ Gubeng ➔ Wonokromo ➔ Waru ➔ Gedangan (×404) ➔ Sidoarjo (×34) ➔ Tanggulangin ➔ Porong ➔ Bangil ➔ Wonokerto (×2634) ➔ Lawang ➔ Singosari ➔ Blimbing ➔ Malang (×2636).</p>
+                
+                <div id="pusdalopkaStatusBadge" style="font-size:0.6rem; padding:4px; border-radius:4px; background:#0f172a; border:1px solid #334155; color:#f59e0b;">
+                    Status Stamformasi: Normal (1 Lok + 3 K3 + 1 KMP3 + 3 K3)
+                </div>
+
+                <button onclick="checkStamformasiAndStart()" class="btn-enter-sim">
+                    <i class="fa-solid fa-play"></i> Mulai Dinas PLB 431A
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. TAMPILAN APLIKASI SIMULATOR UTAMA -->
+        <div id="simulatorAppScreen" class="hidden">
+            <header>
+                <div class="logo-row">
+                    <div class="logo-box">
+                        <i class="fa-solid fa-train"></i>
+                        <h1>PLB 431A Penataran v7.5</h1>
+                    </div>
+
+                    <!-- MONEY BAR HEADER SIMULASI -->
+                    <div class="money-badge-global">
+                        <i class="fa-solid fa-coins" style="color:#facc15;"></i>
+                        <span id="simMoneyDisplay">Rp 1.500.000.000</span>
+                        <div id="simMoneyGainFloat" class="floating-money-gain">+Rp 0</div>
+                    </div>
+                </div>
+                <div class="header-btns">
+                    <button onclick="confirmToMainMenu()" class="btn btn-blue"><i class="fa-solid fa-house"></i> Menu</button>
+                    <button onclick="openScheduleModal()" class="btn btn-cyan"><i class="fa-solid fa-calendar-days"></i> Timetable</button>
+                    <button onclick="openDepotModal()" class="btn btn-purple"><i class="fa-solid fa-warehouse"></i> Depo</button>
+                    <button onclick="openInGameDepotModal()" class="btn btn-amber"><i class="fa-solid fa-gas-pump"></i> Isi HSD</button>
+                    <button id="btnHeaderAdmin" onclick="openAdminModal()" class="btn btn-red hidden"><i class="fa-solid fa-shield"></i> Admin</button>
+                    <button onclick="startBrakeTest()" class="btn btn-emerald"><i class="fa-solid fa-stopwatch-20"></i> Rem</button>
+                    <button onclick="resetSimulation()" class="btn btn-rose"><i class="fa-solid fa-rotate-right"></i> Reset</button>
+                </div>
+            </header>
+
+            <main class="fade-in">
+                <!-- VISUAL KABIN CANVAS -->
                 <div class="card">
                     <div class="card-title">
-                        <span><i class="fa-solid fa-eye" style="color:#60a5fa;"></i> Pandangan Visual Lintasan (Canvas Smooth 2D)</span>
-                        <span id="targetStatusText" style="color:#4ade80; display:none;">Target Stop: 800m</span>
+                        <span><i class="fa-solid fa-eye" style="color:#60a5fa;"></i> Visual Lintasan 2D (PLB 431A SB - ML)</span>
+                        <span id="targetStatusText" style="color:#4ade80;">PLB 431A Penataran</span>
                     </div>
                     
                     <div class="canvas-container">
-                        <!-- OVERLAY ANGKA RINGKAS DI DALAM VISUAL -->
                         <div class="canvas-telemetry-overlay">
-                            <div class="overlay-badge" style="color:#fff;"><i class="fa-solid fa-gauge-high" style="color:#3b82f6;"></i> <span id="overSpeed">0</span> <small style="font-size:0.55rem; color:#94a3b8;">km/h</small></div>
-                            <div class="overlay-badge" style="color:#34d399;"><i class="fa-solid fa-gears" style="color:#10b981;"></i> <span id="overRpm">440</span> <small style="font-size:0.55rem; color:#94a3b8;">RPM</small></div>
-                            <div class="overlay-badge" style="color:#fbbf24;"><i class="fa-solid fa-bolt" style="color:#fbbf24;"></i> <span id="overTe">0</span> <small style="font-size:0.55rem; color:#94a3b8;">kN</small></div>
+                            <div class="overlay-badge" style="color:#fff;"><i class="fa-solid fa-gauge-high" style="color:#3b82f6;"></i> <span id="overSpeed">0</span> <small style="font-size:0.5rem; color:#94a3b8;">km/h</small></div>
+                            <div class="overlay-badge" style="color:#34d399;"><i class="fa-solid fa-gears" style="color:#10b981;"></i> <span id="overRpm">440</span> <small style="font-size:0.5rem; color:#94a3b8;">RPM</small></div>
+                            <div class="overlay-badge" style="color:#fbbf24;"><i class="fa-solid fa-gas-pump" style="color:#f59e0b;"></i> <span id="overHsd">3000</span> <small style="font-size:0.5rem; color:#94a3b8;">L</small></div>
                         </div>
 
                         <canvas id="trainCanvas"></canvas>
                         <div id="alertWheelSlip" class="alert-box"><i class="fa-solid fa-triangle-exclamation"></i> RODA SELIP!</div>
                         <div id="sanderStatus" class="sander-status"><i class="fa-solid fa-box-archive"></i> PEMASIR AKTIF</div>
+                        <div id="crossingBanner" class="crossing-banner"><i class="fa-solid fa-train-subway"></i> <span id="crossingText">PERSILANGAN KERETA ×404...</span></div>
                     </div>
 
                     <div class="station-banner">
-                        <div style="display:flex; align-items:center; gap:6px; overflow:hidden; white-space:nowrap;">
-                            <i class="fa-solid fa-building-flag" style="color:#f59e0b; font-size:0.85rem;"></i>
-                            <span id="bannerStationText">Tujuan: Stasiun Cimahi (3.40 km)</span>
+                        <div style="display:flex; align-items:center; gap:4px; overflow:hidden; white-space:nowrap;">
+                            <i class="fa-solid fa-building-flag" style="color:#f59e0b; font-size:0.75rem;"></i>
+                            <span id="bannerStationText">Tujuan: St. Surabaya Gubeng (800 m)</span>
                         </div>
-                        <div style="font-family:monospace; color:#38bdf8; font-size:0.75rem;" id="liveClockDisplay">🕒 08:00:00</div>
+                        <div style="font-family:monospace; color:#38bdf8; font-size:0.68rem;" id="liveClockDisplay">🕒 17:40:00</div>
+                    </div>
+
+                    <!-- FUEL TANK INDICATOR BAR IN SIMULATION -->
+                    <div style="padding: 2px 4px; background:#0f172a; border-radius:6px; border:1px solid #334155;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.6rem; color:#cbd5e1;">
+                            <span><i class="fa-solid fa-gas-pump" style="color:#f59e0b;"></i> Tangki HSD Lokomotif:</span>
+                            <b id="dispFuelText" style="color:#34d399; font-family:monospace;">3000 / 3015 L</b>
+                        </div>
+                        <div class="fuel-bar-wrap">
+                            <div id="dispFuelBarFill" class="fuel-bar-fill"></div>
+                        </div>
                     </div>
 
                     <div id="brakeTestBanner" class="station-banner hidden" style="border-color:#38bdf8; background:rgba(2, 132, 199, 0.2);">
-                        <i class="fa-solid fa-vial-circle-check" style="color:#38bdf8; font-size:0.9rem;"></i>
-                        <span id="brakeTestStatusText">TES REM AKTIF: Aplikasikan Rem Sampai Berhenti Total!</span>
+                        <i class="fa-solid fa-vial-circle-check" style="color:#38bdf8; font-size:0.8rem;"></i>
+                        <span id="brakeTestStatusText">TES REM AKTIF: Aplikasikan Rem!</span>
                     </div>
                 </div>
 
                 <!-- CONTROL STAND KABIN MASINIS -->
                 <div class="card" style="border: 1px solid #fbbf24;">
                     <div class="card-title">
-                        <span><i class="fa-solid fa-sliders" style="color:#fbbf24;"></i> Control Stand Kabin Masinis</span>
+                        <span><i class="fa-solid fa-sliders" style="color:#fbbf24;"></i> Control Stand Kabin</span>
                         <button id="btnSander" onclick="toggleSander()" class="btn btn-sander"><i class="fa-solid fa-dumpster-fire"></i> SAKELAR PEMASIR</button>
                     </div>
 
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 4px;">
                         <div class="control-group">
                             <div class="control-label"><span><i class="fa-solid fa-gas-pump" style="color:#fbbf24;"></i> Throttle</span><span id="dispThrottleNotch" style="color:#fbbf24; font-family:monospace;">N0</span></div>
                             <input id="sliderThrottle" type="range" min="0" max="8" step="1" value="0" oninput="updateControls()">
                         </div>
 
                         <div class="control-group">
-                            <div class="control-label"><span><i class="fa-solid fa-train" style="color:#f43f5e;"></i> Auto Brake (80 Mode)</span><span id="dispBrakeLabel" style="color:#34d399; font-family:monospace;">B0</span></div>
+                            <div class="control-label"><span><i class="fa-solid fa-train" style="color:#f43f5e;"></i> Auto Brake</span><span id="dispBrakeLabel" style="color:#34d399; font-family:monospace;">B0</span></div>
                             <input id="sliderBrake" type="range" min="0" max="79" step="1" value="0" oninput="updateControls()">
                         </div>
                     </div>
 
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 4px;">
                         <div class="control-group">
                             <div class="control-label"><span><i class="fa-solid fa-compact-disc" style="color:#c084fc;"></i> Indep Brake</span><span id="dispIndepLabel" style="color:#c084fc; font-family:monospace;">0 kPa</span></div>
                             <input id="sliderIndepBrake" type="range" min="0" max="9.2" step="0.2" value="0" oninput="updateControls()">
@@ -250,10 +506,10 @@
                         </div>
                     </div>
 
-                    <button onclick="triggerEmergencyBrake()" class="btn btn-rose" style="width: 100%; justify-content: center; padding: 6px; font-weight:bold;"><i class="fa-solid fa-triangle-exclamation"></i> REM DARURAT (EMERGENCY)</button>
+                    <button onclick="triggerEmergencyBrake()" class="btn btn-rose" style="width: 100%; justify-content: center; padding: 5px; font-weight:bold;"><i class="fa-solid fa-triangle-exclamation"></i> REM DARURAT (EMERGENCY)</button>
                 </div>
 
-                <!-- INDIKATOR TELEMETRI MINI RINGKAS -->
+                <!-- INDIKATOR TELEMETRI MINI -->
                 <div class="card">
                     <div class="card-title"><i class="fa-solid fa-gauge-high" style="color:#38bdf8;"></i> Panel Telemetri Udara (kPa)</div>
                     
@@ -268,173 +524,292 @@
 
                     <div class="telemetry-mini-grid" style="margin-top: 2px;">
                         <div class="telebox-mini"><label>Posisi Total</label><span id="dispDistance" style="color:#67e8f9;">0.00 km</span></div>
-                        <div class="telebox-mini"><label>St. Tujuan</label><span id="dispNextStationName" style="color:#fde047;">St. Cimahi</span></div>
-                        <div class="telebox-mini"><label>Jarak Stasiun</label><span id="dispNextStationDist" style="color:#38bdf8;">3.40 km</span></div>
+                        <div class="telebox-mini"><label>St. Tujuan</label><span id="dispNextStationName" style="color:#fde047;">St. Surabaya Gubeng</span></div>
+                        <div class="telebox-mini"><label>Jarak S5 Stop</label><span id="dispNextStationDist" style="color:#38bdf8;">800 m</span></div>
                         <div class="telebox-mini"><label>Est. Stop</label><span id="dispEstStoppingDist" style="color:#fbbf24;">0.0 m</span></div>
                         <div class="telebox-mini" style="grid-column: span 2;"><label>Akselerasi</label><span id="dispAccel" style="color:#fff;">+0.00 m/s²</span></div>
                     </div>
                 </div>
-            </section>
 
-            <section style="display: flex; flex-direction: column; gap: 8px;">
-                <div id="aiCopilotCard" class="card" style="display: none;">
-                    <div class="card-title"><i class="fa-solid fa-robot" style="color:#a855f7;"></i> Asisten AI Gemini Masinis</div>
-                    <div class="ai-box">
-                        <div class="ai-badge"><i class="fa-solid fa-microchip"></i> KAI Dynamics Inspector</div>
-                        <div id="aiCopilotText">Memproses data telemetri real-time...</div>
-                        <div class="ai-chat-input">
-                            <input type="text" id="aiUserPrompt" placeholder="Tanyakan instruksi atau teknik pengereman..." onkeypress="if(event.key==='Enter') sendAiQuery()">
-                            <button onclick="sendAiQuery()" class="btn btn-cyan" style="white-space:nowrap;"><i class="fa-solid fa-paper-plane"></i> Kirim</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card" style="height: 120px; position:relative;">
+                <div class="card" style="height: 105px; position:relative;">
                     <div class="card-title"><i class="fa-solid fa-chart-line" style="color:#60a5fa;"></i> Grafik Respon Rem & Kecepatan</div>
-                    <canvas id="telemetryChart" style="width:100%; height:85px; display:block;"></canvas>
+                    <canvas id="telemetryChart" style="width:100%; height:75px; display:block;"></canvas>
                 </div>
-
-                <div class="card">
-                    <div class="card-title"><i class="fa-solid fa-gears" style="color:#60a5fa;"></i> Preset & Spesifikasi Lokomotif</div>
-                    
-                    <div class="control-group">
-                        <label style="font-size: 0.65rem; color: #38bdf8; font-weight: bold;">Preset Rangkaian KAI Realistis:</label>
-                        <select id="selectPreset" onchange="applyPreset()">
-                            <option value="cc201_pass_8" selected>CC 201 + 8 Kereta Penumpang (450 Ton / 173 kN)</option>
-                            <option value="cc201_single">CC 201 Solo / Feeder (84 Ton / 173 kN)</option>
-                            <option value="cc203_pass_10">CC 203 + 10 Kereta Eksekutif (520 Ton / 200 kN)</option>
-                            <option value="cc206_freight_20">CC 206 + 20 Gerbong Barang (1100 Ton / 270 kN)</option>
-                        </select>
-                    </div>
-
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                        <div class="control-group">
-                            <div class="control-label"><span>Max TE:</span><span id="dispMaxTE" style="color:#fbbf24;">173 kN</span></div>
-                            <input id="inputMaxTE" type="range" min="100" max="400" step="1" value="173" oninput="updateParameters()">
-                        </div>
-
-                        <div class="control-group">
-                            <div class="control-label"><span>Massa Kereta:</span><span id="dispMass" style="color:#22d3ee;">450 Ton</span></div>
-                            <input id="inputMass" type="range" min="84" max="2500" step="10" value="450" oninput="updateParameters()">
-                        </div>
-                    </div>
-
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                        <div class="control-group">
-                            <div class="control-label"><span>Grade Jalur:</span><span id="dispGrade" style="color:#34d399;">0.0 %</span></div>
-                            <input id="inputGrade" type="range" min="-3" max="3" step="0.1" value="0" oninput="updateParameters()">
-                        </div>
-
-                        <div class="control-group">
-                            <label style="font-size: 0.65rem; color: #94a3b8; margin-bottom: 2px;">Kondisi Rel:</label>
-                            <select id="selectAdhesion" onchange="updateParameters()">
-                                <option value="0.35">Rel Kering Bersih</option>
-                                <option value="0.22" selected>Rel Basah Hujan</option>
-                                <option value="0.12">Rel Licin Berlumut</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="changelog-card">
-                    <h4><i class="fa-solid fa-list-check"></i> Catatan Pembaruan V4.8</h4>
-                    <ul>
-                        <li><b>Set Key Button</b>: Tambah tombol "Set Key" di header. Klik sekali untuk menempelkan kunci `AQ.Ab8RN...` kamu.</li>
-                        <li><b>Zero Github Scanning Risk</b>: Tidak ada hardcoded API Key di kode sumber GitHub.</li>
-                    </ul>
-                </div>
-            </section>
-        </main>
+            </main>
+        </div>
     </div>
 
-    <!-- MODAL KONFIRMASI KEMBALI KE MAIN MENU -->
-    <div id="confirmMenuModal" class="modal hidden">
+    <!-- MODAL JADWAL TIMETABLE PLB 431A -->
+    <div id="scheduleModal" class="modal">
         <div class="modal-content">
-            <h3 style="color:#fff; font-size:0.95rem;"><i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b;"></i> Konfirmasi Kembali ke Main Menu</h3>
-            <p style="font-size:0.75rem; color:#cbd5e1; line-height:1.4;">
-                Apakah Anda yakin ingin kembali ke **Main Menu**? Simulasi berjalan akan di-reset total ke kondisi awal.
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="color:#38bdf8; font-size:0.85rem; display:flex; align-items:center; gap:4px;">
+                    <i class="fa-solid fa-calendar-days"></i> Timetable PLB 431A Penataran
+                </h3>
+                <button onclick="closeScheduleModal()" class="btn btn-rose" style="padding:2px 5px; font-size:0.55rem;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <p style="font-size:0.6rem; color:#94a3b8;">Rute: Surabaya Kota ➔ Malang (KA Penataran Ekonomi Split)</p>
+
+            <table class="timetable-table">
+                <thead>
+                    <tr>
+                        <th>Stasiun</th>
+                        <th>Datang</th>
+                        <th>Berangkat</th>
+                        <th>Silang / Ket.</th>
+                    </tr>
+                </thead>
+                <tbody id="timetableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- MODAL PERMOHONAN IZIN PUSDALOPKA (LD / TAMBAHAN KERETA) -->
+    <div id="pusdalopkaModal" class="modal">
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="color:#f59e0b; font-size:0.85rem; display:flex; align-items:center; gap:4px;">
+                    <i class="fa-solid fa-clipboard-check"></i> Izin Dinas Pusdalopka
+                </h3>
+                <button onclick="closePusdalopkaModal()" class="btn btn-rose" style="padding:2px 5px; font-size:0.55rem;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <p style="font-size:0.62rem; color:#cbd5e1; line-height:1.3;">
+                Stamformasi rangkaian kamu tidak sesuai standar PLB 431A (1 Lok + 3 K3 + 1 KMP3 + 3 K3). Untuk membawa Luar Dinas (LD) / Kereta Tambahan, kamu harus mengajukan izin ke Pusdalopka!
             </p>
-            <div style="display:flex; gap:8px; margin-top:8px;">
-                <button onclick="executeReturnToMainMenu()" class="btn btn-rose" style="flex:1; justify-content:center; padding:8px;">Ya / Lanjutkan</button>
-                <button onclick="closeConfirmModal()" class="btn" style="background:#475569; flex:1; justify-content:center; padding:8px;">Batal</button>
+
+            <div class="input-box">
+                <label>Susunan Rangkaian Saat Ini:</label>
+                <div id="pushedFormationPreview" style="font-size:0.62rem; color:#38bdf8; font-family:monospace; background:#0f172a; padding:6px; border-radius:4px; border:1px solid #334155;">-</div>
+            </div>
+
+            <div class="input-box">
+                <label>Alasan / Keperluan Membawa Kereta Lebih (LD):</label>
+                <textarea id="pusdalopkaReasonInput" rows="3" placeholder="Contoh: Pengiriman 2 Unit K1 Stainless Steel Luar Dinas dari Depo Sidotopo ke Depo Malang untuk KLB Angkutan Lebaran..."></textarea>
+            </div>
+
+            <button onclick="submitPusdalopkaRequest()" class="btn btn-amber" style="justify-content:center; padding:8px; font-weight:bold;">
+                <i class="fa-solid fa-paper-plane"></i> Kirim Permohonan Ke Pusdalopka (Admin)
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL TOKO FLEET ALA E-COMMERCE -->
+    <div id="storeModal" class="modal">
+        <div class="modal-content">
+            <div class="store-header-bar">
+                <h3 style="color:#fff; font-size:0.8rem; display:flex; align-items:center; gap:4px;">
+                    <i class="fa-solid fa-store" style="color:#10b981;"></i> Toko Catalog Fleet
+                </h3>
+                
+                <div style="display:flex; align-items:center; gap:4px;">
+                    <div class="money-badge-global">
+                        <i class="fa-solid fa-coins" style="color:#facc15;"></i>
+                        <span id="storeMoneyDisplay">Rp 1.500.000.000</span>
+                        <div id="storeMoneyGainFloat" class="floating-money-gain">+Rp 0</div>
+                    </div>
+                    <button onclick="closeStoreModal()" class="btn btn-rose" style="padding:2px 5px; font-size:0.55rem;"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+
+            <div class="search-box-wrap">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="storeSearchInput" placeholder="Cari unit (D300, CC201, K3 Split, KMP3...)" onkeyup="filterStoreProducts()">
+            </div>
+
+            <div class="product-grid" id="productGridContainer"></div>
+        </div>
+    </div>
+
+    <!-- MODAL DEPO CUSTOM RANGKAIAN 16 SLOT ASSEMBLY -->
+    <div id="depotModal" class="modal">
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="color:#fff; font-size:0.85rem; display:flex; align-items:center; gap:4px;">
+                    <i class="fa-solid fa-warehouse" style="color:#7c3aed;"></i> Depo 16-Slot Assembly
+                </h3>
+
+                <div class="money-badge-global">
+                    <i class="fa-solid fa-coins" style="color:#facc15;"></i>
+                    <span id="depotMoneyDisplay">Rp 1.500.000.000</span>
+                    <div id="depotMoneyGainFloat" class="floating-money-gain">+Rp 0</div>
+                </div>
+
+                <button onclick="closeDepotModal()" class="btn btn-rose" style="padding:2px 5px; font-size:0.55rem;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <p style="font-size:0.62rem; color:#94a3b8;">
+                Seret (drag) / klik unit di bawah lalu tempatkan ke Slot 1 - 16:
+            </p>
+
+            <div class="depot-inventory-scroll" id="depotInventoryScroll"></div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px;">
+                <span style="font-size:0.68rem; color:#fff; font-weight:bold;"><i class="fa-solid fa-list-ol" style="color:#38bdf8;"></i> Susunan Formasi (16 Slot):</span>
+                <button onclick="clearAllSlots()" class="btn btn-rose" style="padding:2px 6px; font-size:0.55rem;"><i class="fa-solid fa-trash"></i> Reset Slot</button>
+            </div>
+
+            <div class="slots-grid" id="slotsGridContainer"></div>
+
+            <div class="depot-telemetry-box">
+                <div class="depot-stat-line">
+                    <span><i class="fa-solid fa-weight-hanging" style="color:#22d3ee;"></i> Total Berat Rangkaian:</span>
+                    <b id="depotCalcMass" style="color:#22d3ee;">0 Ton</b>
+                </div>
+                <div class="depot-stat-line">
+                    <span><i class="fa-solid fa-bolt" style="color:#fbbf24;"></i> Total Traksi TE Tersedia:</span>
+                    <b id="depotCalcTE" style="color:#fbbf24;">0 kN</b>
+                </div>
+            </div>
+
+            <button onclick="applyCustomDepotBuild()" class="btn btn-purple" style="justify-content:center; padding:8px; font-weight:bold;">
+                <i class="fa-solid fa-check-double"></i> Terapkan Rangkaian Ke Simulasi
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL DEPO DARURAT PAS DINAS (ISI HSD BBM) -->
+    <div id="inGameDepotModal" class="modal">
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="color:#f59e0b; font-size:0.85rem; display:flex; align-items:center; gap:4px;">
+                    <i class="fa-solid fa-gas-pump"></i> Pengisian HSD (BBM) Stasiun
+                </h3>
+                <button onclick="closeInGameDepotModal()" class="btn btn-rose" style="padding:2px 5px; font-size:0.55rem;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <p style="font-size:0.62rem; color:#cbd5e1; line-height:1.3;">
+                Fasilitas Pengisian Bahan Bakar HSD Kereta Api. Hanya dapat digunakan saat berhenti sempurna di Stasiun Besar.
+            </p>
+
+            <div class="result-stat-card">
+                <div class="result-row">
+                    <span>Status Lokasi:</span>
+                    <b id="refuelLocationStatus" style="color:#34d399;">St. Surabaya Gubeng (Stasiun Besar)</b>
+                </div>
+                <div class="result-row">
+                    <span>Sisa Tangki Lokomotif:</span>
+                    <b id="refuelLocoFuelText" style="color:#facc15;">3000 / 3015 Liter</b>
+                </div>
+                <div class="result-row">
+                    <span>Harga HSD / Liter:</span>
+                    <b>Rp 15.000 / Liter</b>
+                </div>
+            </div>
+
+            <button onclick="executeRefuelHSD()" class="btn btn-emerald" style="justify-content:center; padding:8px; font-weight:bold;">
+                <i class="fa-solid fa-fill-drip"></i> Isi Full Tangki HSD Lokomotif
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL RESULT / LAPORAN HASIL STOP DINAS -->
+    <div id="stationResultModal" class="modal">
+        <div class="modal-content">
+            <div style="text-align:center; padding:4px 0;">
+                <i class="fa-solid fa-square-check" style="font-size:2.2rem; color:#10b981;"></i>
+                <h2 style="font-size:1.1rem; color:#fff; margin-top:2px;">LAPORAN HASIL DINAS</h2>
+                <p style="font-size:0.65rem; color:#94a3b8;" id="resStationNameTitle">Pemberhentian Stasiun Wonokromo</p>
+            </div>
+
+            <div class="result-stat-card">
+                <div class="result-row">
+                    <span><i class="fa-solid fa-coins" style="color:#facc15;"></i> Uang Berhasil Ditambah:</span>
+                    <b id="resMoneyAdded" style="color:#34d399;">+Rp 25.000.000</b>
+                </div>
+                <div class="result-row">
+                    <span><i class="fa-solid fa-bullseye" style="color:#60a5fa;"></i> Akurasi Stop Peron:</span>
+                    <b id="resAccuracyText" style="color:#60a5fa;">Sempurna (100%)</b>
+                </div>
+                <div class="result-row">
+                    <span><i class="fa-solid fa-route" style="color:#c084fc;"></i> Jarak Ditempuh:</span>
+                    <b id="resDistanceTraveled" style="color:#c084fc;">1.20 km</b>
+                </div>
+                <div class="result-row">
+                    <span><i class="fa-solid fa-gas-pump" style="color:#f59e0b;"></i> Konsumsi BBM HSD:</span>
+                    <b id="resHsdConsumed" style="color:#f59e0b;">12.4 Liter</b>
+                </div>
+                <div class="result-row">
+                    <span><i class="fa-solid fa-clock" style="color:#38bdf8;"></i> Waktu Tempuh:</span>
+                    <b id="resTimeElapsed" style="color:#38bdf8;">00:02:15</b>
+                </div>
+            </div>
+
+            <button onclick="closeResultModal()" class="btn btn-blue" style="justify-content:center; padding:8px; font-weight:bold; margin-top:4px;">
+                <i class="fa-solid fa-forward"></i> Lanjutkan Perjalanan
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL KHUSUS ADMIN PANEL (PUSDALOPKA CONTROLLER & ACTIVE FLEET) -->
+    <div id="adminModal" class="modal">
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="color:#f87171; font-size:0.85rem; display:flex; align-items:center; gap:4px;">
+                    <i class="fa-solid fa-user-shield"></i> Admin & Pusdalopka Panel
+                </h3>
+                <button onclick="closeAdminModal()" class="btn btn-rose" style="padding:2px 5px; font-size:0.55rem;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="admin-box">
+                <h4><i class="fa-solid fa-wand-magic-sparkles"></i> Menu Cheat & Developer</h4>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:4px;">
+                    <button onclick="adminAddMoney(1000000000)" class="btn btn-emerald" style="padding:6px; font-weight:bold;">+1 Miliar Uang</button>
+                    <button onclick="adminUnlockAllFleet()" class="btn btn-purple" style="padding:6px; font-weight:bold;">Unlock Semua Fleet</button>
+                </div>
+            </div>
+
+            <div class="admin-box">
+                <h4><i class="fa-solid fa-headset"></i> Permohonan Izin LD / Pusdalopka (Pending Live)</h4>
+                <div id="pusdalopkaRequestsList" style="display:flex; flex-direction:column; gap:4px;"></div>
+            </div>
+
+            <!-- PANEL KERETA AKTIF BERJALAN DINAS / LD -->
+            <div class="admin-box" style="border-color:#38bdf8; background:rgba(2, 132, 199, 0.1);">
+                <h4 style="color:#38bdf8;"><i class="fa-solid fa-train-subway"></i> Tracking Kereta Aktif / Dinas Berjalan</h4>
+                <div id="activeTrainsList" style="display:flex; flex-direction:column; gap:4px;"></div>
+            </div>
+
+            <div class="admin-box">
+                <h4><i class="fa-solid fa-map-location-dot"></i> Teleport Stasiun (PLB 431A)</h4>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:4px;" id="adminStationTeleportBtns"></div>
             </div>
         </div>
     </div>
 
-    <script>
-        function getSavedApiKey() {
-            let k = localStorage.getItem('my_gemini_api_key');
-            if (!k) {
-                k = prompt("Masukkan Gemini API Key kamu (Contoh: AQ.Ab8RN...):", "");
-                if (k && k.trim().length > 5) {
-                    k = k.trim();
-                    localStorage.setItem('my_gemini_api_key', k);
-                }
-            }
-            return k || "";
-        }
+    <!-- MODAL KONFIRMASI KEMBALI KE MAIN MENU -->
+    <div id="confirmMenuModal" class="modal">
+        <div class="modal-content">
+            <h3 style="color:#fff; font-size:0.85rem;"><i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b;"></i> Kembali ke Main Menu</h3>
+            <p style="font-size:0.7rem; color:#cbd5e1; line-height:1.3;">
+                Apakah Anda yakin ingin kembali ke **Main Menu**? Simulasi berjalan akan di-reset.
+            </p>
+            <div style="display:flex; gap:6px; margin-top:4px;">
+                <button onclick="executeReturnToMainMenu()" class="btn btn-rose" style="flex:1; justify-content:center; padding:6px;">Ya / Lanjutkan</button>
+                <button onclick="closeConfirmModal()" class="btn" style="background:#475569; flex:1; justify-content:center; padding:6px;">Batal</button>
+            </div>
+        </div>
+    </div>
 
-        function changeApiKeyPrompt() {
-            let oldKey = localStorage.getItem('my_gemini_api_key') || "";
-            let newKey = prompt("Edit Gemini API Key kamu:", oldKey);
-            if (newKey !== null && newKey.trim() !== "") {
-                localStorage.setItem('my_gemini_api_key', newKey.trim());
-                alert("API Key berhasil disimpan!");
-            }
-        }
+    <!-- FIREBASE SDK ENGINE MODULAR (V10) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, get, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        async function fetchGeminiText(promptText, systemPrompt) {
-            const apiKey = getSavedApiKey();
-            if (!apiKey) return "API Key belum diisi! Klik tombol 'Set Key' di header untuk memasukkan kunci.";
+        const firebaseConfig = {
+            databaseURL: "https://skai-multiplayer-default-rtdb.asia-southeast1.firebasedatabase.app/"
+        };
 
-            let delay = 1000;
-            for (let i = 0; i < 3; i++) {
-                try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: promptText }] }],
-                            systemInstruction: systemPrompt ? { parts: [{ text: systemPrompt }] } : undefined
-                        })
-                    });
-                    if (response.ok) {
-                        const data = await response.json();
-                        return data.candidates?.[0]?.content?.parts?.[0]?.text || "Respon kosong dari AI.";
-                    } else {
-                        const errErr = await response.json();
-                        console.error("Gemini Error:", errErr);
-                    }
-                } catch (err) { console.error(err); }
-                await new Promise(res => setTimeout(res, delay));
-                delay *= 2;
-            }
-            return "Gagal terhubung dengan layanan Gemini AI. Periksa koneksi internet atau validitas API Key.";
-        }
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
-        async function fetchGeminiTts(textToSay) {
-            const apiKey = getSavedApiKey();
-            if (!apiKey) return null;
+        const ADMIN_EMAIL = "welahdalah235@gmail.com";
+        let loggedInEmail = null;
+        let isAdmin = false;
 
-            let delay = 1000;
-            for (let i = 0; i < 3; i++) {
-                try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: `Say in a professional female Indonesian railway station announcer voice: ${textToSay}` }] }]
-                        })
-                    });
-                    if (response.ok) {
-                        const data = await response.json();
-                        return data.candidates?.[0]?.content?.parts?.[0]?.text;
-                    }
-                } catch (err) { }
-                await new Promise(res => setTimeout(res, delay));
-                delay *= 2;
-            }
-            return null;
+        function cleanEmailKey(email) {
+            return email.replace(/[.#$\[\]]/g, "_").toLowerCase();
         }
 
         let audioCtx = null;
@@ -466,27 +841,472 @@
             } catch(e) {}
         }
 
+        window.fleetStoreData = [
+            { id: 'd300', name: 'D300 Shunter', desc: 'Lokomotif hisap langsir ringan depo.', mass: 36, te: 80, price: 120000000, icon: 'fa-truck-monster', tag: 'D300' },
+            { id: 'cc200', name: 'CC 200 Vintage', desc: 'Lokomotif diesel-elektrik klasik pertama.', mass: 96, te: 180, price: 180000000, icon: 'fa-train-subway', tag: 'CC200' },
+            { id: 'cc201', name: 'CC 201 Intercity', desc: 'Lokomotif legenda handal 84 Ton (Tangki HSD 3015L).', mass: 84, te: 173, price: 250000000, icon: 'fa-train', tag: 'CC201' },
+            { id: 'cc203', name: 'CC 203 Express', desc: 'Lokomotif hidrodinamis aerodinamis 84 Ton (Tangki HSD 3015L).', mass: 84, te: 200, price: 300000000, icon: 'fa-bolt', tag: 'CC203' },
+            { id: 'cc206', name: 'CC 206 Heavy', desc: 'Lokomotif ganda traksi berat 90 Ton.', mass: 90, te: 270, price: 450000000, icon: 'fa-boxes-packing', tag: 'CC206' },
+            { id: 'k3split', name: 'K3 AC Split', desc: 'Kereta Ekonomi AC Split Penataran (35 Ton).', mass: 35, te: 0, price: 12000000, icon: 'fa-users', tag: 'K3Split' },
+            { id: 'kmp3', name: 'KMP3 Ekonomi', desc: 'Kereta Makan & Pembangkit Ekonomi (38 Ton).', mass: 38, te: 0, price: 16000000, icon: 'fa-utensils', tag: 'KMP3' },
+            { id: 'k1', name: 'K1 New Image', desc: 'Kereta penumpang Stainless Steel (40 Ton/unit).', mass: 40, te: 0, price: 15000000, icon: 'fa-users', tag: 'K1' },
+            { id: 'm1', name: 'M1 Kereta Makan', desc: 'Kereta fasilitas kuliner/restorasi penumpang.', mass: 40, te: 0, price: 18000000, icon: 'fa-utensils', tag: 'M1' },
+            { id: 'p1', name: 'P1 Kereta Pembangkit', desc: 'Kereta genset pembangkit listrik kelistrikan.', mass: 42, te: 0, price: 20000000, icon: 'fa-bolt-lightning', tag: 'P1' }
+        ];
+
+        window.userData = {
+            playerMoney: 1500000000,
+            inventory: { d300: 0, cc200: 0, cc201: 1, cc203: 0, cc206: 0, k3split: 6, kmp3: 1, k1: 0, m1: 0, p1: 0 },
+            slots: ['cc201', 'k3split', 'k3split', 'k3split', 'kmp3', 'k3split', 'k3split', 'k3split', null, null, null, null, null, null, null, null]
+        };
+
+        window.saveUserData = function() {
+            if (!loggedInEmail) return;
+            const key = cleanEmailKey(loggedInEmail);
+            set(ref(db, 'users/' + key), window.userData);
+        };
+
+        window.loadUserData = async function() {
+            if (!loggedInEmail) return;
+            const key = cleanEmailKey(loggedInEmail);
+            const snapshot = await get(ref(db, 'users/' + key));
+            if (snapshot.exists()) {
+                window.userData = snapshot.val();
+                if (!window.userData.slots || window.userData.slots.length !== 16) {
+                    window.userData.slots = Array(16).fill(null);
+                }
+            } else {
+                window.saveUserData();
+            }
+        };
+
+        window.handleRegister = async function() {
+            const email = document.getElementById('authEmail').value.trim().toLowerCase();
+            const password = document.getElementById('authPassword').value;
+
+            if (!email || !password) return alert('Isi Email dan Password dulu!');
+            if (password.length < 4) return alert('Password minimal 4 karakter!');
+
+            const key = cleanEmailKey(email);
+            const accRef = ref(db, 'accounts/' + key);
+            const snapshot = await get(accRef);
+
+            if (snapshot.exists()) {
+                alert('Email ini sudah terdaftar, bre! Silakan masukkan password lalu klik LOGIN.');
+                return;
+            }
+
+            await set(accRef, { password: password, email: email });
+            alert('Registrasi Cloud akun ' + email + ' berhasil! Silakan klik tombol LOGIN.');
+            document.getElementById('authPassword').value = '';
+        };
+
+        window.handleLogin = async function() {
+            const email = document.getElementById('authEmail').value.trim().toLowerCase();
+            const password = document.getElementById('authPassword').value;
+
+            if (!email || !password) return alert('Isi Email dan Password dulu!');
+
+            const key = cleanEmailKey(email);
+            const accRef = ref(db, 'accounts/' + key);
+
+            if (email === ADMIN_EMAIL.toLowerCase()) {
+                const snapshotAdmin = await get(accRef);
+                if (!snapshotAdmin.exists()) {
+                    await set(accRef, { password: password, email: email });
+                }
+            }
+
+            const snapshot = await get(accRef);
+
+            if (!snapshot.exists()) {
+                alert('Akun tidak ditemukan di Firebase Cloud! Silakan klik REGISTER.');
+                return;
+            }
+
+            if (snapshot.val().password !== password) {
+                alert('Password salah, bre! Akses ditolak.');
+                return;
+            }
+
+            loggedInEmail = email;
+            isAdmin = (email === ADMIN_EMAIL.toLowerCase());
+
+            initUserSession();
+        };
+
+        window.handleLogout = function() {
+            if (loggedInEmail) {
+                const key = cleanEmailKey(loggedInEmail);
+                remove(ref(db, 'active_trains/' + key));
+            }
+
+            loggedInEmail = null;
+            isAdmin = false;
+            
+            document.getElementById('authEmail').value = '';
+            document.getElementById('authPassword').value = '';
+
+            document.getElementById('mainMenuScreen').classList.add('hidden');
+            document.getElementById('simulatorAppScreen').classList.add('hidden');
+            document.getElementById('authScreen').classList.remove('hidden');
+        };
+
+        async function initUserSession() {
+            document.getElementById('authScreen').classList.add('hidden');
+            document.getElementById('mainMenuScreen').classList.remove('hidden');
+            document.getElementById('displayUserEmail').innerText = loggedInEmail + (isAdmin ? ' (ADMIN/PUSDALOPKA)' : '');
+
+            if (isAdmin) {
+                document.getElementById('btnAdminMenu').classList.remove('hidden');
+                document.getElementById('btnHeaderAdmin').classList.remove('hidden');
+            } else {
+                document.getElementById('btnAdminMenu').classList.add('hidden');
+                document.getElementById('btnHeaderAdmin').classList.add('hidden');
+            }
+
+            await window.loadUserData();
+            window.syncUIAfterDataChange();
+            window.checkPusdalopkaPermissionStatus();
+            listenRealtimePusdalopka();
+            updateActiveTrainStatus();
+        }
+
+        function listenRealtimePusdalopka() {
+            const reqRef = ref(db, 'pusdalopka_requests');
+            onValue(reqRef, (snapshot) => {
+                const data = snapshot.val() || {};
+                renderPusdalopkaAdminListFirebase(data);
+                window.checkPusdalopkaPermissionStatusFromData(data);
+            });
+
+            const activeRef = ref(db, 'active_trains');
+            onValue(activeRef, (snapshot) => {
+                const data = snapshot.val() || {};
+                renderActiveTrainsListFirebase(data);
+            });
+        }
+
+        function updateActiveTrainStatus() {
+            if (!loggedInEmail) return;
+            const key = cleanEmailKey(loggedInEmail);
+            const activeRef = ref(db, 'active_trains/' + key);
+            set(activeRef, {
+                email: loggedInEmail,
+                formation: window.userData.slots.filter(s => s !== null),
+                time: new Date().toLocaleTimeString()
+            });
+        }
+
+        window.invalidatePusdalopkaPermission = function() {
+            if (!loggedInEmail) return;
+            const key = cleanEmailKey(loggedInEmail);
+            remove(ref(db, 'pusdalopka_requests/' + key));
+        };
+
+        window.submitPusdalopkaRequest = function() {
+            const reason = document.getElementById('pusdalopkaReasonInput').value.trim();
+            if (!reason) return alert('Isi alasan/keperluan dinas dengan jelas dulu!');
+
+            const key = cleanEmailKey(loggedInEmail);
+            const reqRef = ref(db, 'pusdalopka_requests/' + key);
+
+            set(reqRef, {
+                email: loggedInEmail,
+                formation: window.userData.slots.filter(s => s !== null),
+                reason: reason,
+                status: 'PENDING',
+                time: new Date().toLocaleTimeString()
+            }).then(() => {
+                window.closePusdalopkaModal();
+                alert('Permohonan Izin LD berhasil dikirim ke Pusdalopka secara Realtime!');
+            });
+        };
+
+        window.checkPusdalopkaPermissionStatus = async function() {
+            const snapshot = await get(ref(db, 'pusdalopka_requests'));
+            window.checkPusdalopkaPermissionStatusFromData(snapshot.val() || {});
+        };
+
+        window.checkPusdalopkaPermissionStatusFromData = function(reqsData) {
+            const badge = document.getElementById('pusdalopkaStatusBadge');
+            if (!badge) return;
+
+            if (window.isStandardStamformasi()) {
+                badge.innerText = "Status Stamformasi: Normal PLB 431A (Sesuai Standard)";
+                badge.style.borderColor = "#10b981"; badge.style.color = "#34d399";
+                return true;
+            }
+
+            const key = cleanEmailKey(loggedInEmail || "");
+            const myReq = reqsData[key];
+
+            if (myReq && myReq.status === 'APPROVED') {
+                badge.innerText = `Izin Pusdalopka ACC: "LD ${myReq.reason.substring(0,25)}..."`;
+                badge.style.borderColor = "#10b981"; badge.style.color = "#34d399";
+                return true;
+            } else if (myReq && myReq.status === 'PENDING') {
+                badge.innerText = "Status: Menunggu ACC Pusdalopka (Admin) untuk LD / Tambahan Kereta";
+                badge.style.borderColor = "#f59e0b"; badge.style.color = "#fbbf24";
+                return false;
+            } else if (myReq && myReq.status === 'REJECTED') {
+                badge.innerText = "Permohonan LD Ditolak Pusdalopka! Ubah Rangkaian / Ajukan Lagi.";
+                badge.style.borderColor = "#ef4444"; badge.style.color = "#f87171";
+                return false;
+            } else {
+                badge.innerText = "Stamformasi Tidak Sesuai PLB 431A! Perlu Izin Pusdalopka.";
+                badge.style.borderColor = "#e11d48"; badge.style.color = "#fda4af";
+                return false;
+            }
+        };
+
+        function renderPusdalopkaAdminListFirebase(reqs) {
+            const container = document.getElementById('pusdalopkaRequestsList');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const keys = Object.keys(reqs).filter(k => reqs[k].status === 'PENDING');
+
+            if (keys.length === 0) {
+                container.innerHTML = `<div style="font-size:0.6rem; color:#94a3b8;">Tidak ada permohonan pending saat ini.</div>`;
+                return;
+            }
+
+            keys.forEach(k => {
+                const r = reqs[k];
+                const card = document.createElement('div');
+                card.className = 'request-card';
+                card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; font-weight:bold; color:#fff;">
+                        <span>${r.email}</span>
+                        <span style="color:#fbbf24">${r.status}</span>
+                    </div>
+                    <div><b>Formasi:</b> ${r.formation.join(' - ').toUpperCase()}</div>
+                    <div><b>Alasan:</b> "${r.reason}"</div>
+                    <div style="display:flex; gap:4px; margin-top:2px;">
+                        <button onclick="adminApprovePusdalopkaFirebase('${k}', true)" class="btn btn-emerald" style="flex:1; padding:3px;">ACC</button>
+                        <button onclick="adminApprovePusdalopkaFirebase('${k}', false)" class="btn btn-rose" style="flex:1; padding:3px;">Tolak</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        window.adminApprovePusdalopkaFirebase = function(targetKey, isApprove) {
+            const reqRef = ref(db, 'pusdalopka_requests/' + targetKey);
+            if (isApprove) {
+                update(reqRef, { status: 'APPROVED' }).then(() => {
+                    alert(`Permohonan ${targetKey} berhasil di-ACC secara Realtime!`);
+                });
+            } else {
+                remove(reqRef).then(() => {
+                    alert(`Permohonan ${targetKey} berhasil DITOLAK & dihapus dari antrean!`);
+                });
+            }
+        };
+
+        function renderActiveTrainsListFirebase(activeData) {
+            const container = document.getElementById('activeTrainsList');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const keys = Object.keys(activeData);
+            if (keys.length === 0) {
+                container.innerHTML = `<div style="font-size:0.6rem; color:#94a3b8;">Belum ada kereta aktif dinas.</div>`;
+                return;
+            }
+
+            keys.forEach(k => {
+                const tr = activeData[k];
+                const card = document.createElement('div');
+                card.className = 'request-card';
+                card.style.borderColor = '#10b981';
+                card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; font-weight:bold; color:#fff;">
+                        <span><i class="fa-solid fa-user" style="color:#38bdf8;"></i> ${tr.email}</span>
+                        <span style="color:#34d399; font-size:0.55rem;">✅ DINAS AKTIF</span>
+                    </div>
+                    <div><b>KA Dinas:</b> PLB 431A Penataran</div>
+                    <div><b>Formasi (${tr.formation ? tr.formation.length : 0} Unit):</b> ${(tr.formation || []).join(' - ').toUpperCase()}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        window.formatRupiah = function(amount) {
+            return 'Rp ' + amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        };
+
+        window.addPlayerMoneyWithAnim = function(amount) {
+            window.userData.playerMoney += amount;
+            window.saveUserData();
+
+            const textGain = `+${window.formatRupiah(amount)}`;
+            const floatIds = ['menuMoneyGainFloat', 'simMoneyGainFloat', 'storeMoneyGainFloat', 'depotMoneyGainFloat'];
+
+            floatIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.innerText = textGain;
+                    el.classList.remove('show-float');
+                    void el.offsetWidth;
+                    el.classList.add('show-float');
+                }
+            });
+
+            window.syncUIAfterDataChange();
+        };
+
+        window.syncUIAfterDataChange = function() {
+            const formattedMoney = window.formatRupiah(window.userData.playerMoney);
+            ['menuMoneyDisplay', 'simMoneyDisplay', 'storeMoneyDisplay', 'depotMoneyDisplay'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = formattedMoney;
+            });
+        };
+
+        window.isStandardStamformasi = function() {
+            const filled = window.userData.slots.filter(s => s !== null);
+            if (filled.length !== 8) return false;
+            
+            const locos = ['cc201', 'cc203', 'cc206', 'cc200', 'd300'];
+            if (!locos.includes(filled[0])) return false;
+            
+            const expected = [filled[0], 'k3split', 'k3split', 'k3split', 'kmp3', 'k3split', 'k3split', 'k3split'];
+            for (let i = 0; i < 8; i++) {
+                if (filled[i] !== expected[i]) return false;
+            }
+            return true;
+        };
+
+        window.checkStamformasiAndStart = function() {
+            if (window.isStandardStamformasi() || window.checkPusdalopkaPermissionStatus()) {
+                window.startSimulatorApp();
+            } else {
+                window.openPusdalopkaModal();
+            }
+        };
+
+        window.openPusdalopkaModal = function() {
+            const preview = document.getElementById('pushedFormationPreview');
+            const activeSlots = window.userData.slots.filter(s => s !== null);
+            if (preview) {
+                preview.innerText = activeSlots.length > 0 ? activeSlots.join(' - ').toUpperCase() : '[ KOSONG ]';
+            }
+            document.getElementById('pusdalopkaModal').classList.add('show');
+        };
+
+        window.closePusdalopkaModal = function() {
+            document.getElementById('pusdalopkaModal').classList.remove('show');
+        };
+
+        window.openAdminModal = function() {
+            if (!isAdmin) return;
+            window.renderAdminTeleportButtons();
+            document.getElementById('adminModal').classList.add('show');
+        };
+
+        window.closeAdminModal = function() {
+            document.getElementById('adminModal').classList.remove('show');
+        };
+
+        window.adminAddMoney = function(amount) {
+            window.addPlayerMoneyWithAnim(amount);
+            alert('Admin: Uang ditambahkan ' + window.formatRupiah(amount));
+        };
+
+        window.adminUnlockAllFleet = function() {
+            window.fleetStoreData.forEach(item => {
+                window.userData.inventory[item.id] = (window.userData.inventory[item.id] || 0) + 5;
+            });
+            window.saveUserData();
+            window.syncUIAfterDataChange();
+            alert('Admin: Semua unit Fleet berhasil di-unlock +5!');
+        };
+
+        window.adminTeleportStation = function(idx) {
+            if (stations && stations[idx]) {
+                state.positionMeters = Math.max(0, stations[idx].pos - 100);
+                state.currentStationIdx = idx;
+                window.closeAdminModal();
+                alert(`Admin: Teleportasi ke St. ${stations[idx].name}`);
+            }
+        };
+
+        window.renderAdminTeleportButtons = function() {
+            const container = document.getElementById('adminStationTeleportBtns');
+            if (!container) return;
+            container.innerHTML = '';
+            stations.forEach((st, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-blue';
+                btn.style.padding = '5px';
+                btn.style.fontSize = '0.6rem';
+                btn.innerText = `St. ${st.name}`;
+                btn.onclick = () => window.adminTeleportStation(idx);
+                container.appendChild(btn);
+            });
+        };
+
+        /* JADWAL DOKUMEN TIMETABLE PLB 431A COMMUTER LINE PENATARAN */
         const stationMasterList = [
-            { name: "Bandung", elev: 709 }, { name: "Cimahi", elev: 742 },
-            { name: "Padalarang", elev: 695 }, { name: "Cilame", elev: 635 },
-            { name: "Sasaksaat", elev: 560 }, { name: "Maswati", elev: 495 },
-            { name: "Cikadongdong", elev: 408 }, { name: "Rendeh", elev: 342 },
-            { name: "Purwakarta", elev: 84 }, { name: "Cikampek", elev: 46 }
+            { name: "Surabaya Kota", arr: "-", dep: "17:40", note: "Awal Dinas", pos: 0, isMajor: true, crossTrain: null },
+            { name: "Surabaya Gubeng", arr: "17:48", dep: "17:52", note: "St. Besar", pos: 1200, isMajor: true, crossTrain: null },
+            { name: "Wonokromo", arr: "18:00", dep: "18:07", note: "St. Besar", pos: 3200, isMajor: true, crossTrain: null },
+            { name: "Waru", arr: "18:16", dep: "18:18", note: "Halte", pos: 5500, isMajor: false, crossTrain: null },
+            { name: "Gedangan", arr: "18:26", dep: "18:36", note: "×404 (Persilangan)", pos: 7800, isMajor: false, crossTrain: "404 Commuter Line" },
+            { name: "Sidoarjo", arr: "18:47", dep: "18:58", note: "×34 (Persilangan)", pos: 11200, isMajor: true, crossTrain: "34 Express" },
+            { name: "Tanggulangin", arr: "19:07", dep: "19:10", note: "Halte", pos: 14000, isMajor: false, crossTrain: null },
+            { name: "Porong", arr: "19:17", dep: "19:20", note: "Halte", pos: 16800, isMajor: false, crossTrain: null },
+            { name: "Bangil", arr: "19:36", dep: "19:52", note: "St. Besar (Isi BBM)", pos: 21500, isMajor: true, crossTrain: null },
+            { name: "Wonokerto", arr: "20:03", dep: "20:25", note: "×2634 (Persilangan)", pos: 26500, isMajor: false, crossTrain: "2634 Barang" },
+            { name: "Lawang", arr: "20:50", dep: "20:52", note: "St. Besar", pos: 32000, isMajor: true, crossTrain: null },
+            { name: "Singosari", arr: "21:02", dep: "21:04", note: "Halte", pos: 35500, isMajor: false, crossTrain: null },
+            { name: "Blimbing", arr: "21:12", dep: "21:14", note: "Halte", pos: 39000, isMajor: false, crossTrain: null },
+            { name: "Malang", arr: "21:26", dep: "21:28", note: "×2636 (Akhir Dinas)", pos: 43000, isMajor: true, crossTrain: "2636 Jayabay" }
         ];
 
         let stations = [];
         function initStations() {
             stations = [];
-            let currentPosMeters = 3400;
             for (let i = 0; i < stationMasterList.length; i++) {
-                if (i > 0) currentPosMeters += 3400 + Math.floor(Math.random() * 1200);
                 stations.push({
                     name: stationMasterList[i].name,
-                    elev: stationMasterList[i].elev,
-                    pos: currentPosMeters,
-                    length: 250
+                    pos: stationMasterList[i].pos,
+                    isMajor: stationMasterList[i].isMajor,
+                    crossTrain: stationMasterList[i].crossTrain,
+                    length: 260,
+                    rewardClaimed: false,
+                    crossingTriggered: false
                 });
             }
+        }
+
+        window.openScheduleModal = function() {
+            renderTimetableData();
+            document.getElementById('scheduleModal').classList.add('show');
+        };
+
+        window.closeScheduleModal = function() {
+            document.getElementById('scheduleModal').classList.remove('show');
+        };
+
+        function renderTimetableData() {
+            const body = document.getElementById('timetableBody');
+            if (!body) return;
+            body.innerHTML = '';
+
+            stationMasterList.forEach((st, idx) => {
+                const tr = document.createElement('tr');
+                if (state.currentStationIdx === idx) tr.className = 'active-st';
+                tr.innerHTML = `
+                    <td><b>${st.name}</b></td>
+                    <td>${st.arr}</td>
+                    <td>${st.dep}</td>
+                    <td><span style="color:${st.crossTrain ? '#fbbf24' : '#94a3b8'};">${st.note}</span></td>
+                `;
+                body.appendChild(tr);
+            });
         }
 
         function formatSecondsToTime(totalSec) {
@@ -501,7 +1321,6 @@
             return stations[state.currentStationIdx] || stations[0];
         }
 
-        // PEMBUATAN 80 MODE AUTOMATIC BRAKE (0 - 79)
         const autoBrakeModes = [];
         function generate80BrakeModes() {
             autoBrakeModes.length = 0;
@@ -526,22 +1345,63 @@
         }
         generate80BrakeModes();
 
-        // CONFIG RPM ENGINE NOTCH
+        window.placeUnitToSlot = function(unitId, slotIdx) {
+            const usedCounts = getUsedUnitCounts();
+            const totalOwned = window.userData.inventory[unitId] || 0;
+            const used = usedCounts[unitId] || 0;
+
+            if (window.userData.slots[slotIdx] === unitId) return;
+            if (totalOwned - used <= 0 && window.userData.slots[slotIdx] === null) {
+                alert('Semua unit ' + unitId.toUpperCase() + ' kamu sudah terpasang di slot lain!');
+                return;
+            }
+
+            window.userData.slots[slotIdx] = unitId;
+            window.saveUserData();
+            window.invalidatePusdalopkaPermission();
+            render16SlotsDepot();
+            calculateDepotStats();
+            window.checkPusdalopkaPermissionStatus();
+            updateActiveTrainStatus();
+        };
+
+        window.removeUnitFromSlot = function(slotIdx, event) {
+            if (event) event.stopPropagation();
+            window.userData.slots[slotIdx] = null;
+            window.saveUserData();
+            window.invalidatePusdalopkaPermission();
+            render16SlotsDepot();
+            calculateDepotStats();
+            window.checkPusdalopkaPermissionStatus();
+            updateActiveTrainStatus();
+        };
+
+        window.clearAllSlots = function() {
+            window.userData.slots = Array(16).fill(null);
+            window.saveUserData();
+            window.invalidatePusdalopkaPermission();
+            render16SlotsDepot();
+            calculateDepotStats();
+            window.checkPusdalopkaPermissionStatus();
+            updateActiveTrainStatus();
+        };
+
         const notchConfigs = [
-            { rpm: 440, maxKmH: 0,   effortRatio: 0.0 },   // N0
-            { rpm: 450, maxKmH: 22,  effortRatio: 0.25 },  // N1
-            { rpm: 534, maxKmH: 35,  effortRatio: 0.38 },  // N2
-            { rpm: 620, maxKmH: 48,  effortRatio: 0.52 },  // N3
-            { rpm: 706, maxKmH: 62,  effortRatio: 0.65 },  // N4
-            { rpm: 793, maxKmH: 75,  effortRatio: 0.77 },  // N5
-            { rpm: 878, maxKmH: 88,  effortRatio: 0.88 },  // N6
-            { rpm: 936, maxKmH: 102, effortRatio: 0.95 },  // N7
-            { rpm: 1050, maxKmH: 125, effortRatio: 1.00 }   // N8
+            { rpm: 440, maxKmH: 0,   effortRatio: 0.0,  hsdRateLps: 0.02 },
+            { rpm: 450, maxKmH: 22,  effortRatio: 0.25, hsdRateLps: 0.08 },
+            { rpm: 534, maxKmH: 35,  effortRatio: 0.38, hsdRateLps: 0.15 },
+            { rpm: 620, maxKmH: 48,  effortRatio: 0.52, hsdRateLps: 0.24 },
+            { rpm: 706, maxKmH: 62,  effortRatio: 0.65, hsdRateLps: 0.36 },
+            { rpm: 793, maxKmH: 75,  effortRatio: 0.77, hsdRateLps: 0.48 },
+            { rpm: 878, maxKmH: 88,  effortRatio: 0.88, hsdRateLps: 0.62 },
+            { rpm: 936, maxKmH: 102, effortRatio: 0.95, hsdRateLps: 0.78 },
+            { rpm: 1050, maxKmH: 125, effortRatio: 1.00, hsdRateLps: 0.95 }
         ];
 
+        /* STATE ENGINE & SIMULATOR */
         const state = {
             speedKmH: 0, speedMS: 0, positionMeters: 0, acceleration: 0,
-            simClockSeconds: 8 * 3600,
+            simClockSeconds: 17 * 3600 + 40 * 60,
             mainResBar: 9.7, brakePipeBar: 5.0, autoBrakeCylinderBar: 0.0, indepBrakeBar: 0.0,
             dynBrakeNotch: 0, dynBrakeEffortPercent: 0,
             engineTempC: 65, tmTempC: 40,
@@ -550,24 +1410,32 @@
             autoBrakeHandlePos: 0, prevAutoBrakeHandlePos: 0,
             throttleNotch: 0, actualThrottlePercent: 0,
             smoothedTractionKN: 0,
-            massTons: 450, maxTractiveEffortKN: 173, maxSpeedKmH: 120,
+            massTons: 84, maxTractiveEffortKN: 173, maxSpeedKmH: 120,
             gradientPercent: 0.0, adhesionMu: 0.22,
             fTraction: 0, fDavis: 0, fGrade: 0, fAutoBrake: 0, fIndepBrake: 0, fDynBrake: 0, fNet: 0,
-            challengeMode: false, targetDistanceMeters: 800,
             isSanderActive: false, isWheelSlip: false,
             currentStationIdx: 1, estimatedStoppingDistance: 0,
-            hasAutoAnnounced: false,
-            isBrakeTesting: false, brakeTestStartSpeed: 0, brakeTestTimerSec: 0, brakeTestDistMeter: 0
+            isBrakeTesting: false, brakeTestStartSpeed: 0, brakeTestTimerSec: 0, brakeTestDistMeter: 0,
+
+            maxHsdLiter: 3015,
+            currentHsdLiter: 3000,
+            hsdConsumedInLeg: 0,
+            legStartDistance: 0,
+            legStartTimeSec: 17 * 3600 + 40 * 60,
+
+            crossingActive: false,
+            crossingTrainPos: 0
         };
 
         let canvas, ctx;
         let sliderThrottle, sliderBrake, sliderIndepBrake, sliderDynBrake;
-        let inputMass, inputMaxTE, inputGrade, selectAdhesion;
         let dispBp, dispBc, dispNetForce, dispDistance, dispMr, dispEngTemp, dispTmTemp;
         let dispNextStationName, dispNextStationDist, dispEstStoppingDist, dispAccel;
-        let dispThrottleNotch, dispBrakeLabel, dispIndepLabel, dispDynLabel, dispMass, dispMaxTE, dispGrade;
+        let dispThrottleNotch, dispBrakeLabel, dispIndepLabel, dispDynLabel;
         let alertWheelSlip, sanderStatus, bannerStationText, liveClockDisplay, brakeTestBanner, brakeTestStatusText;
-        let overSpeed, overRpm, overTe;
+        let overSpeed, overRpm, overHsd, dispFuelText, dispFuelBarFill, crossingBanner, crossingText;
+
+        let selectedUnitForPlacement = null;
 
         const maxChartDataPoints = 60;
         const speedData = Array(maxChartDataPoints).fill(0);
@@ -581,14 +1449,10 @@
             sliderBrake = document.getElementById('sliderBrake');
             sliderIndepBrake = document.getElementById('sliderIndepBrake');
             sliderDynBrake = document.getElementById('sliderDynBrake');
-            inputMass = document.getElementById('inputMass');
-            inputMaxTE = document.getElementById('inputMaxTE');
-            inputGrade = document.getElementById('inputGrade');
-            selectAdhesion = document.getElementById('selectAdhesion');
 
             overSpeed = document.getElementById('overSpeed');
             overRpm = document.getElementById('overRpm');
-            overTe = document.getElementById('overTe');
+            overHsd = document.getElementById('overHsd');
 
             dispBp = document.getElementById('dispBp');
             dispBc = document.getElementById('dispBc');
@@ -606,39 +1470,315 @@
             dispBrakeLabel = document.getElementById('dispBrakeLabel');
             dispIndepLabel = document.getElementById('dispIndepLabel');
             dispDynLabel = document.getElementById('dispDynLabel');
-            dispMass = document.getElementById('dispMass');
-            dispMaxTE = document.getElementById('dispMaxTE');
-            dispGrade = document.getElementById('dispGrade');
             alertWheelSlip = document.getElementById('alertWheelSlip');
             sanderStatus = document.getElementById('sanderStatus');
             bannerStationText = document.getElementById('bannerStationText');
             liveClockDisplay = document.getElementById('liveClockDisplay');
             brakeTestBanner = document.getElementById('brakeTestBanner');
             brakeTestStatusText = document.getElementById('brakeTestStatusText');
+            dispFuelText = document.getElementById('dispFuelText');
+            dispFuelBarFill = document.getElementById('dispFuelBarFill');
+            crossingBanner = document.getElementById('crossingBanner');
+            crossingText = document.getElementById('crossingText');
         }
 
-        function startSimulatorApp() {
+        window.startSimulatorApp = function() {
             document.getElementById('mainMenuScreen').classList.add('hidden');
             document.getElementById('simulatorAppScreen').classList.remove('hidden');
             resizeCanvas();
-        }
+        };
 
-        function confirmToMainMenu() {
-            document.getElementById('confirmMenuModal').classList.remove('hidden');
-        }
+        window.confirmToMainMenu = function() {
+            document.getElementById('confirmMenuModal').classList.add('show');
+        };
 
-        function closeConfirmModal() {
-            document.getElementById('confirmMenuModal').classList.add('hidden');
-        }
+        window.closeConfirmModal = function() {
+            document.getElementById('confirmMenuModal').classList.remove('show');
+        };
 
-        function executeReturnToMainMenu() {
-            closeConfirmModal();
-            resetSimulation();
+        window.executeReturnToMainMenu = function() {
+            window.closeConfirmModal();
+            window.resetSimulation();
             document.getElementById('simulatorAppScreen').classList.add('hidden');
             document.getElementById('mainMenuScreen').classList.remove('hidden');
+        };
+
+        window.openStoreModal = function() {
+            renderStoreProducts();
+            document.getElementById('storeModal').classList.add('show');
+        };
+
+        window.closeStoreModal = function() {
+            document.getElementById('storeModal').classList.remove('show');
+        };
+
+        window.openDepotModal = function() {
+            render16SlotsDepot();
+            calculateDepotStats();
+            document.getElementById('depotModal').classList.add('show');
+        };
+
+        window.closeDepotModal = function() {
+            document.getElementById('depotModal').classList.remove('show');
+        };
+
+        /* IN-GAME REFUEL DEPOT MODAL */
+        window.openInGameDepotModal = function() {
+            const currSt = getTargetStation();
+            const isStopped = (state.speedKmH === 0);
+            const locText = document.getElementById('refuelLocationStatus');
+            const fuelText = document.getElementById('refuelLocoFuelText');
+
+            if (locText) {
+                if (isStopped && currSt.isMajor) {
+                    locText.innerText = `St. ${currSt.name} (Stasiun Besar - Siap Isi HSD)`;
+                    locText.style.color = '#34d399';
+                } else if (!isStopped) {
+                    locText.innerText = `Kereta Masih Berjalan! (Harus Berhenti Sempurna)`;
+                    locText.style.color = '#ef4444';
+                } else {
+                    locText.innerText = `St. ${currSt.name} (Bukan Stasiun Besar - Tidak Ada Fasilitas HSD)`;
+                    locText.style.color = '#f59e0b';
+                }
+            }
+
+            if (fuelText) {
+                fuelText.innerText = `${Math.round(state.currentHsdLiter)} / ${state.maxHsdLiter} Liter`;
+            }
+
+            document.getElementById('inGameDepotModal').classList.add('show');
+        };
+
+        window.closeInGameDepotModal = function() {
+            document.getElementById('inGameDepotModal').classList.remove('show');
+        };
+
+        window.executeRefuelHSD = function() {
+            const currSt = getTargetStation();
+            if (state.speedKmH > 0) return alert('Kereta harus berhenti sempurna (0 km/h) untuk mengisi HSD!');
+            if (!currSt.isMajor) return alert('Hanya Stasiun Besar yang menyediakan fasilitas pengisian HSD!');
+
+            const neededLiter = state.maxHsdLiter - state.currentHsdLiter;
+            if (neededLiter <= 1) return alert('Tangki HSD sudah hampir penuh!');
+
+            const cost = Math.round(neededLiter * 15000);
+            if (window.userData.playerMoney < cost) return alert('Uang kamu tidak cukup untuk mengisi HSD!');
+
+            window.userData.playerMoney -= cost;
+            state.currentHsdLiter = state.maxHsdLiter;
+            window.saveUserData();
+            window.syncUIAfterDataChange();
+            window.closeInGameDepotModal();
+
+            alert(`Pengisian HSD Berhasil! +${Math.round(neededLiter)} Liter HSD dimasukkan (${window.formatRupiah(cost)}).`);
+        };
+
+        /* RESULT SUMMARY MODAL FUNCTIONS */
+        function showStationResultModal(earnedMoney, accuracyText, distKm, hsdConsumedL, timeSec) {
+            document.getElementById('resStationNameTitle').innerText = `Pemberhentian St. ${getTargetStation().name}`;
+            document.getElementById('resMoneyAdded').innerText = `+${window.formatRupiah(earnedMoney)}`;
+            document.getElementById('resAccuracyText').innerText = accuracyText;
+            document.getElementById('resDistanceTraveled').innerText = `${distKm.toFixed(2)} km`;
+            document.getElementById('resHsdConsumed').innerText = `${hsdConsumedL.toFixed(1)} Liter`;
+            document.getElementById('resTimeElapsed').innerText = formatSecondsToTime(timeSec);
+
+            document.getElementById('stationResultModal').classList.add('show');
         }
 
-        function toggleSander() {
+        window.closeResultModal = function() {
+            document.getElementById('stationResultModal').classList.remove('show');
+        };
+
+        window.buyUnit = function(unitId) {
+            const item = window.fleetStoreData.find(f => f.id === unitId);
+            if (!item) return;
+
+            if (window.userData.playerMoney >= item.price) {
+                window.userData.playerMoney -= item.price;
+                window.userData.inventory[unitId] = (window.userData.inventory[unitId] || 0) + 1;
+                
+                const emptySlotIdx = window.userData.slots.findIndex(s => s === null);
+                if (emptySlotIdx !== -1) window.userData.slots[emptySlotIdx] = unitId;
+
+                window.saveUserData();
+                renderStoreProducts(document.getElementById('storeSearchInput') ? document.getElementById('storeSearchInput').value : "");
+            } else {
+                alert('Uang kamu tidak cukup untuk membeli ' + item.name);
+            }
+        };
+
+        function renderStoreProducts(filterTxt = "") {
+            const container = document.getElementById('productGridContainer');
+            window.syncUIAfterDataChange();
+            if (!container) return;
+            container.innerHTML = '';
+
+            const filtered = window.fleetStoreData.filter(item => 
+                item.name.toLowerCase().includes(filterTxt.toLowerCase()) || 
+                item.tag.toLowerCase().includes(filterTxt.toLowerCase())
+            );
+
+            filtered.forEach(item => {
+                const ownedQty = window.userData.inventory[item.id] || 0;
+                const card = document.createElement('div');
+                card.className = `product-card ${ownedQty > 0 ? 'owned' : ''}`;
+                card.innerHTML = `
+                    <div class="product-thumb">
+                        <i class="fa-solid ${item.icon}"></i>
+                    </div>
+                    <div class="product-title">${item.name}</div>
+                    <div class="product-price">${window.formatRupiah(item.price)}</div>
+                    <div class="product-desc">${item.desc}</div>
+                    <div class="product-spec-row">
+                        <span>${item.mass} Ton</span>
+                        <span>${item.te} kN</span>
+                    </div>
+                    <button onclick="buyUnit('${item.id}')" class="btn ${ownedQty > 0 ? 'btn-emerald' : 'btn-blue'} btn-store-action">
+                        ${ownedQty > 0 ? `Beli Lagi (${ownedQty})` : 'Beli Unit'}
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        window.filterStoreProducts = function() {
+            const val = document.getElementById('storeSearchInput').value;
+            renderStoreProducts(val);
+        };
+
+        function getUsedUnitCounts() {
+            const used = {};
+            window.userData.slots.forEach(s => {
+                if (s) used[s] = (used[s] || 0) + 1;
+            });
+            return used;
+        }
+
+        function render16SlotsDepot() {
+            const invContainer = document.getElementById('depotInventoryScroll');
+            const gridContainer = document.getElementById('slotsGridContainer');
+            if (!invContainer || !gridContainer) return;
+
+            invContainer.innerHTML = '';
+            gridContainer.innerHTML = '';
+
+            const usedCounts = getUsedUnitCounts();
+            let hasAvailableUnits = false;
+
+            window.fleetStoreData.forEach(item => {
+                const totalOwned = window.userData.inventory[item.id] || 0;
+                const used = usedCounts[item.id] || 0;
+                const available = totalOwned - used;
+
+                if (totalOwned > 0) {
+                    hasAvailableUnits = true;
+                    const el = document.createElement('div');
+                    el.className = `depot-inv-item ${selectedUnitForPlacement === item.id ? 'selected' : ''}`;
+                    el.draggable = available > 0;
+                    el.innerHTML = `
+                        <i class="fa-solid ${item.icon}" style="color:#60a5fa; font-size:1.1rem;"></i>
+                        <div style="font-size:0.6rem; font-weight:bold; color:#fff; white-space:nowrap;">${item.tag}</div>
+                        <div style="font-size:0.5rem; color:${available > 0 ? '#34d399' : '#ef4444'};">${available}/${totalOwned} Ready</div>
+                    `;
+
+                    el.ondragstart = (e) => {
+                        if (available <= 0) return false;
+                        e.dataTransfer.setData('text/plain', item.id);
+                    };
+
+                    el.onclick = () => {
+                        if (available > 0) {
+                            selectedUnitForPlacement = (selectedUnitForPlacement === item.id) ? null : item.id;
+                            render16SlotsDepot();
+                        }
+                    };
+
+                    invContainer.appendChild(el);
+                }
+            });
+
+            if (!hasAvailableUnits) {
+                invContainer.innerHTML = `<div style="font-size:0.65rem; color:#94a3b8; padding:6px; text-align:center; width:100%;">Belum ada unit. Beli dulu di Toko Fleet!</div>`;
+            }
+
+            for (let i = 0; i < 16; i++) {
+                const slotUnitId = window.userData.slots[i];
+                const unitData = window.fleetStoreData.find(f => f.id === slotUnitId);
+                const slotBox = document.createElement('div');
+                slotBox.className = `slot-box ${unitData ? 'filled' : ''}`;
+                
+                slotBox.innerHTML = `
+                    <span class="slot-label">SLOT ${i + 1}</span>
+                    ${unitData ? `
+                        <i class="fa-solid ${unitData.icon}" style="color:#38bdf8; font-size:1rem; margin-top:6px;"></i>
+                        <span style="font-size:0.55rem; font-weight:bold; color:#fff;">${unitData.tag}</span>
+                        <i class="fa-solid fa-xmark slot-remove-btn" onclick="removeUnitFromSlot(${i}, event)"></i>
+                    ` : `<span style="font-size:0.55rem; color:#475569; margin-top:8px;">[ Kosong ]</span>`}
+                `;
+
+                slotBox.ondragover = (e) => {
+                    e.preventDefault();
+                    slotBox.classList.add('drag-over');
+                };
+
+                slotBox.ondragleave = () => {
+                    slotBox.classList.remove('drag-over');
+                };
+
+                slotBox.ondrop = (e) => {
+                    e.preventDefault();
+                    slotBox.classList.remove('drag-over');
+                    const unitId = e.dataTransfer.getData('text/plain');
+                    if (unitId) window.placeUnitToSlot(unitId, i);
+                };
+
+                slotBox.onclick = () => {
+                    if (selectedUnitForPlacement) {
+                        window.placeUnitToSlot(selectedUnitForPlacement, i);
+                        selectedUnitForPlacement = null;
+                    }
+                };
+
+                gridContainer.appendChild(slotBox);
+            }
+        }
+
+        function calculateDepotStats() {
+            let totalMass = 0;
+            let totalTE = 0;
+
+            window.userData.slots.forEach(slotUnitId => {
+                if (slotUnitId) {
+                    const item = window.fleetStoreData.find(f => f.id === slotUnitId);
+                    if (item) {
+                        totalMass += item.mass;
+                        totalTE += item.te;
+                    }
+                }
+            });
+
+            const minTE = Math.round(totalMass * 0.28);
+
+            document.getElementById('depotCalcMass').innerText = `${totalMass} Ton`;
+            document.getElementById('depotCalcTE').innerText = `${totalTE} kN`;
+
+            return { totalMass, totalTE, minTE };
+        }
+
+        window.applyCustomDepotBuild = function() {
+            const stats = calculateDepotStats();
+            if (stats.totalMass <= 0) {
+                alert('Pasang minimal 1 unit kereta/lokomotif di Slot Rangkaian!');
+                return;
+            }
+            state.massTons = stats.totalMass;
+            state.maxTractiveEffortKN = stats.totalTE;
+            
+            window.closeDepotModal();
+            window.checkPusdalopkaPermissionStatus();
+        };
+
+        window.toggleSander = function() {
             state.isSanderActive = !state.isSanderActive;
             const btn = document.getElementById('btnSander');
             if (state.isSanderActive) {
@@ -649,25 +1789,14 @@
                 btn.classList.remove('active');
                 if (sanderStatus) sanderStatus.style.display = 'none';
             }
-        }
-
-        function applyPreset() {
-            const val = document.getElementById('selectPreset').value;
-            if (val === 'cc201_single') { state.massTons = 84; state.maxTractiveEffortKN = 173; }
-            else if (val === 'cc201_pass_8') { state.massTons = 450; state.maxTractiveEffortKN = 173; }
-            else if (val === 'cc203_pass_10') { state.massTons = 520; state.maxTractiveEffortKN = 200; }
-            else if (val === 'cc206_freight_20') { state.massTons = 1100; state.maxTractiveEffortKN = 270; }
-            if (inputMass) inputMass.value = state.massTons;
-            if (inputMaxTE) inputMaxTE.value = state.maxTractiveEffortKN;
-            updateParameters();
-        }
+        };
 
         function drawTelemetryChart() {
             const chartCanvas = document.getElementById('telemetryChart');
             if (!chartCanvas) return;
             const parent = chartCanvas.parentElement;
             const w = parent ? parent.clientWidth : 300;
-            const h = 85;
+            const h = 75;
             const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
             chartCanvas.width = Math.floor(w * dpr);
@@ -680,7 +1809,7 @@
             cCtx.fillRect(0, 0, w, h);
 
             cCtx.strokeStyle = '#1e293b'; cCtx.lineWidth = 1;
-            for (let y = 15; y < h; y += 20) {
+            for (let y = 15; y < h; y += 18) {
                 cCtx.beginPath(); cCtx.moveTo(0, y); cCtx.lineTo(w, y); cCtx.stroke();
             }
 
@@ -705,21 +1834,35 @@
             }
         }
 
-        function startBrakeTest() {
+        window.startBrakeTest = function() {
             state.isBrakeTesting = true;
             state.brakeTestStartSpeed = state.speedKmH;
             state.brakeTestTimerSec = 0;
             state.brakeTestDistMeter = 0;
             if (brakeTestBanner) brakeTestBanner.classList.remove('hidden');
             if (brakeTestStatusText) brakeTestStatusText.innerText = `🧪 TES REM (V0: ${Math.round(state.speedKmH)} km/h): Aplikasikan Rem!`;
+        };
+
+        function triggerCrossingAnimation(trainName) {
+            state.crossingActive = true;
+            state.crossingTrainPos = -150;
+            if (crossingBanner) crossingBanner.style.display = 'flex';
+            if (crossingText) crossingText.innerText = `PERSILANGAN KERETA × ${trainName}`;
+
+            let animTimer = setInterval(() => {
+                state.crossingTrainPos += 12;
+                if (state.crossingTrainPos > 600) {
+                    clearInterval(animTimer);
+                    state.crossingActive = false;
+                    if (crossingBanner) crossingBanner.style.display = 'none';
+                }
+            }, 50);
         }
 
         function updatePhysics(dt) {
             state.simClockSeconds += dt;
 
-            // DYNAMIC ENGINE RPM SIMULATION
             const curConfig = notchConfigs[state.throttleNotch];
-            
             let loadDrag = (state.throttleNotch > 0 && state.speedKmH < 15) ? (state.massTons / 1000) * 18 : 0;
             let targetBaseRpm = Math.max(440, curConfig.rpm - loadDrag);
 
@@ -729,6 +1872,17 @@
 
             let dynamicTargetRpm = targetBaseRpm + state.rpmNoiseOffset;
             state.engineRpm += (dynamicTargetRpm - state.engineRpm) * (2.0 * dt);
+
+            /* HSD FUEL CONSUMPTION PHYSICS LOGIC */
+            if (state.currentHsdLiter > 0) {
+                const consRate = curConfig.hsdRateLps;
+                const hsdLoss = consRate * dt;
+                state.currentHsdLiter = Math.max(0, state.currentHsdLiter - hsdLoss);
+                state.hsdConsumedInLeg += hsdLoss;
+            } else {
+                state.throttleNotch = 0;
+                if (sliderThrottle) sliderThrottle.value = 0;
+            }
 
             if (state.brakePipeBar < 5.0) {
                 state.mainResBar = Math.max(8.0, state.mainResBar - 0.20 * dt);
@@ -742,7 +1896,7 @@
 
             const isOverloaded = (state.massTons > 600 && state.speedKmH < 40 && state.throttleNotch > 4);
             const loadFactor = isOverloaded ? 2.5 : 1.0;
-            const targetTmTemp = 35 + (state.fTraction / state.maxTractiveEffortKN) * 80 * loadFactor + (state.dynBrakeNotch * 5);
+            const targetTmTemp = 35 + (state.fTraction / Math.max(1, state.maxTractiveEffortKN)) * 80 * loadFactor + (state.dynBrakeNotch * 5);
             state.tmTempC += (targetTmTemp - state.tmTempC) * (0.03 * dt);
 
             if (state.autoBrakeHandlePos !== state.prevAutoBrakeHandlePos) {
@@ -761,15 +1915,16 @@
             const maxBcBarLimit = 9.2;
             const targetAutoBc = Math.min(maxBcBarLimit, ((5.0 - state.brakePipeBar) / 5.0) * maxBcBarLimit);
             if (state.brakeApplyLagTimer <= 0) {
-                state.autoBrakeCylinderBar += (targetAutoBc - state.autoBrakeCylinderBar) * (dt / 0.20);
+                const bcDelta = targetAutoBc - state.autoBrakeCylinderBar;
+                const smoothRate = bcDelta > 0 ? 3.2 : 4.8;
+                state.autoBrakeCylinderBar += bcDelta * (1.0 - Math.exp(-smoothRate * dt));
             }
             state.autoBrakeCylinderBar = Math.max(0, Math.min(maxBcBarLimit, state.autoBrakeCylinderBar));
 
-            // KALKULASI TRAKSI KN
             let rpmTractionRatio = Math.max(0, (state.engineRpm - 440) / (1050 - 440));
             let speedDropFactor = 1.0;
 
-            if (state.throttleNotch > 0) {
+            if (state.throttleNotch > 0 && state.currentHsdLiter > 0) {
                 const notchLimitKmH = curConfig.maxKmH;
                 const speedThreshold = notchLimitKmH * 0.75;
                 if (state.speedKmH > speedThreshold) {
@@ -797,7 +1952,6 @@
             state.fDavis = (0.016 * state.massTons) + (0.0003 * state.massTons * state.speedKmH) + (0.00028 * Math.pow(state.speedKmH, 2));
             state.fGrade = state.massTons * 9.81 * (state.gradientPercent / 100);
 
-            // DESELERASI DIKUNCI PRESISI: REM OTOMATIS MAX -0.8 M/S² | GABUNGAN TOTAL MAX -1.1 M/S²
             let sanderBrakeBoost = state.isSanderActive ? 1.05 : 1.0;
             const autoBrakeRatio = (state.autoBrakeCylinderBar / 9.2);
             
@@ -816,9 +1970,9 @@
 
             if (state.speedMS <= 0) {
                 state.speedMS = 0; state.speedKmH = 0;
-                state.acceleration = netDriveForce > 0 ? (netDriveForce / state.massTons) : 0;
+                state.acceleration = netDriveForce > 0 ? (netDriveForce / Math.max(1, state.massTons)) : 0;
             } else {
-                state.acceleration = netDriveForce / state.massTons;
+                state.acceleration = netDriveForce / Math.max(1, state.massTons);
             }
 
             state.fNet = netDriveForce;
@@ -837,32 +1991,59 @@
                 if (state.speedMS <= 0) {
                     state.isBrakeTesting = false;
                     if (brakeTestStatusText) {
-                        brakeTestStatusText.innerText = `✅ TES REM SELESAI! (V0: ${Math.round(state.brakeTestStartSpeed)} km/h ➔ 0 km/h dalam ${state.brakeTestTimerSec.toFixed(2)}s / ${state.brakeTestDistMeter.toFixed(2)}m)`;
+                        brakeTestStatusText.innerText = `✅ TES REM SELESAI! (${Math.round(state.brakeTestStartSpeed)} km/h ➔ 0 km/h dalam ${state.brakeTestTimerSec.toFixed(2)}s / ${state.brakeTestDistMeter.toFixed(2)}m)`;
                     }
                 } else if (brakeTestStatusText) {
-                    brakeTestStatusText.innerText = `🧪 TES REM: ${state.brakeTestTimerSec.toFixed(1)}s | Jarak: ${state.brakeTestDistMeter.toFixed(1)}m | Kecepatan: ${Math.round(state.speedKmH)} km/h`;
+                    brakeTestStatusText.innerText = `🧪 TES REM: ${state.brakeTestTimerSec.toFixed(1)}s | Jarak: ${state.brakeTestDistMeter.toFixed(1)}m`;
                 }
             }
 
-            let totalDecel = (totalBrakeForce + state.fDavis) / state.massTons;
+            let totalDecel = (totalBrakeForce + state.fDavis) / Math.max(1, state.massTons);
             state.estimatedStoppingDistance = (totalDecel > 0.05 && state.speedMS > 0.1) ? (Math.pow(state.speedMS, 2) / (2 * totalDecel)) : 0;
 
+            /* BATAS BERHENTI S5 (MAJU 15 METER DARI PERON) & TRIGGER RESULT HALT */
             if (stations && state.currentStationIdx < stations.length) {
-                const targetSt = getTargetStation();
-                const distToSt = targetSt.pos - state.positionMeters;
-                if (distToSt <= 1000 && distToSt > 0 && !state.hasAutoAnnounced) {
-                    state.hasAutoAnnounced = true;
-                    requestAiAnnouncer(true);
+                const currSt = getTargetStation();
+                const startPlatform = currSt.pos;
+                const endPlatform = currSt.pos + currSt.length + 15; // BATAS BERHENTI S5 (+15m)
+
+                if (state.speedKmH === 0 && state.positionMeters >= startPlatform && state.positionMeters <= endPlatform) {
+                    if (!currSt.rewardClaimed) {
+                        currSt.rewardClaimed = true;
+                        
+                        let isPerfect = (state.positionMeters >= startPlatform + 40 && state.positionMeters <= endPlatform - 10);
+                        let rewardBase = 150000000;
+                        let precisionBonus = isPerfect ? 50000000 : 0;
+                        let totalReward = rewardBase + precisionBonus;
+                        
+                        window.addPlayerMoneyWithAnim(totalReward);
+
+                        const legDistKm = (state.positionMeters - state.legStartDistance) / 1000;
+                        const legTimeSec = state.simClockSeconds - state.legStartTimeSec;
+                        const accuracyTxt = isPerfect ? "Sempurna Tepat S5 (100% Bonus)" : "Bagus (Stop Peron S5)";
+
+                        showStationResultModal(totalReward, accuracyTxt, legDistKm, state.hsdConsumedInLeg, legTimeSec);
+
+                        if (currSt.crossTrain && !currSt.crossingTriggered) {
+                            currSt.crossingTriggered = true;
+                            triggerCrossingAnimation(currSt.crossTrain);
+                        }
+
+                        state.hsdConsumedInLeg = 0;
+                        state.legStartDistance = state.positionMeters;
+                        state.legStartTimeSec = state.simClockSeconds;
+                    }
                 }
-                if (state.positionMeters > targetSt.pos + targetSt.length + 100) {
+
+                if (state.positionMeters > endPlatform + 100) {
                     if (state.currentStationIdx < stations.length - 1) {
-                        state.currentStationIdx++; state.hasAutoAnnounced = false;
+                        state.currentStationIdx++;
                     }
                 }
             }
         }
 
-        function updateControls() {
+        window.updateControls = function() {
             if (sliderThrottle) state.throttleNotch = parseInt(sliderThrottle.value);
             if (sliderBrake) state.autoBrakeHandlePos = parseInt(sliderBrake.value);
             if (sliderIndepBrake) state.indepBrakeBar = parseFloat(sliderIndepBrake.value);
@@ -880,117 +2061,48 @@
                 dispIndepLabel.innerText = state.indepBrakeBar === 0 ? '0 kPa' : `${indepKpa} kPa`;
             }
             if (dispDynLabel) dispDynLabel.innerText = state.dynBrakeNotch === 0 ? 'OFF' : `B${state.dynBrakeNotch}`;
-        }
+        };
 
-        function triggerEmergencyBrake() {
+        window.triggerEmergencyBrake = function() {
             if (sliderThrottle) sliderThrottle.value = 0;
             if (sliderBrake) sliderBrake.value = 79;
             if (sliderIndepBrake) sliderIndepBrake.value = 9.2;
             if (sliderDynBrake) sliderDynBrake.value = 8;
-            updateControls();
-        }
+            window.updateControls();
+        };
 
-        function updateParameters() {
-            if (inputMass) state.massTons = parseFloat(inputMass.value);
-            if (inputMaxTE) state.maxTractiveEffortKN = parseFloat(inputMaxTE.value);
-            if (inputGrade) state.gradientPercent = parseFloat(inputGrade.value);
-            if (selectAdhesion) state.adhesionMu = parseFloat(selectAdhesion.value);
-
-            if (dispMass) dispMass.innerText = `${state.massTons} Ton`;
-            if (dispMaxTE) dispMaxTE.innerText = `${state.maxTractiveEffortKN} kN`;
-            if (dispGrade) dispGrade.innerText = `${state.gradientPercent > 0 ? '+' : ''}${state.gradientPercent.toFixed(1)} %`;
-        }
-
-        function toggleChallengeMode() {
-            state.challengeMode = !state.challengeMode;
-            const btn = document.getElementById('btnChallenge');
-            const txt = document.getElementById('challengeBtnText');
-            if (state.challengeMode) {
-                if (btn) btn.style.background = "#10b981"; 
-                if (txt) txt.innerText = "Target Stop";
-            } else {
-                if (btn) btn.style.background = "#d97706"; 
-                if (txt) txt.innerText = "Target Stop";
-            }
-        }
-
-        function resetSimulation() {
+        window.resetSimulation = function() {
             state.speedKmH = 0; state.speedMS = 0; state.positionMeters = 0; state.acceleration = 0;
+            state.simClockSeconds = 17 * 3600 + 40 * 60;
             state.mainResBar = 9.7; state.brakePipeBar = 5.0; state.autoBrakeCylinderBar = 0.0; state.indepBrakeBar = 0.0;
             state.dynBrakeNotch = 0; state.autoBrakeHandlePos = 0; state.throttleNotch = 0; state.engineRpm = 440;
             state.smoothedTractionKN = 0;
-            state.engineTempC = 65; state.tmTempC = 40; state.currentStationIdx = 1; state.hasAutoAnnounced = false;
+            state.engineTempC = 65; state.tmTempC = 40; state.currentStationIdx = 1;
             state.isBrakeTesting = false;
+            state.currentHsdLiter = 3000;
+            state.hsdConsumedInLeg = 0;
+            state.legStartDistance = 0;
 
             if (sliderThrottle) sliderThrottle.value = 0;
             if (sliderBrake) sliderBrake.value = 0;
             if (sliderIndepBrake) sliderIndepBrake.value = 0;
             if (sliderDynBrake) sliderDynBrake.value = 0;
             if (brakeTestBanner) brakeTestBanner.classList.add('hidden');
-            updateControls();
+            window.updateControls();
             speedData.fill(0); autoBcData.fill(0);
-        }
-
-        async function requestAiAudit() {
-            const aiCard = document.getElementById('aiCopilotCard');
-            const aiText = document.getElementById('aiCopilotText');
-            if (aiCard) aiCard.style.display = 'flex';
-            if (aiText) aiText.innerText = "⚡ Menganalisis telemetri masinis via AI Gemini...";
-
-            const targetSt = getTargetStation();
-            const distToSt = Math.max(0, targetSt.pos - state.positionMeters);
-
-            const prompt = `Lakukan audit pengoperasian lokomotif KAI real-time:
-            - Kecepatan: ${Math.round(state.speedKmH)} km/h | RPM: ${Math.round(state.engineRpm)}
-            - Stasiun Tujuan: ${targetSt.name} (${(distToSt/1000).toFixed(2)} km)
-            - Tekanan BC: ${Math.round(state.autoBrakeCylinderBar * 100)} kPa / BP ${Math.round(state.brakePipeBar * 100)} kPa
-            - Mode Rem: ${autoBrakeModes[state.autoBrakeHandlePos].code} (80 Mode System)
-            Berikan analisis teknis pengereman dan instruksi masinis presisi singkat (Maksimal 3 kalimat).`;
-
-            const sys = "Kamu adalah Kepala Inspektur Masinis PT KAI.";
-            const res = await fetchGeminiText(prompt, sys);
-            if (aiText) aiText.innerText = res;
-        }
-
-        async function sendAiQuery() {
-            const input = document.getElementById('aiUserPrompt');
-            const userQ = input ? input.value.trim() : "";
-            if (!userQ) return;
-
-            const aiText = document.getElementById('aiCopilotText');
-            if (aiText) aiText.innerText = `💬 [Masinis]: "${userQ}"\n\n⚡ Menjawab...`;
-            if (input) input.value = "";
-
-            const res = await fetchGeminiText(userQ, "Kamu adalah Asisten Masinis AI Senior PT KAI.");
-            if (aiText) aiText.innerText = res;
-        }
-
-        let isAnnouncing = false;
-        async function requestAiAnnouncer(isAuto = false) {
-            if (isAnnouncing) return;
-            isAnnouncing = true;
-            const aiCard = document.getElementById('aiCopilotCard');
-            const aiText = document.getElementById('aiCopilotText');
-            if (aiCard) aiCard.style.display = 'flex';
-            const targetSt = getTargetStation();
-            const textToSay = `Pelanggan yang kami hormati, sebentar lagi Kereta Api akan memasuki Stasiun ${targetSt.name}. Mohon periksa kembali barang bawaan Anda.`;
-            if (aiText) aiText.innerText = `🔊 [Announcer St. ${targetSt.name}]: "${textToSay}"`;
-
-            try {
-                const resText = await fetchGeminiTts(textToSay);
-                if (resText && 'speechSynthesis' in window) {
-                    const utterance = new SpeechSynthesisUtterance(textToSay);
-                    utterance.lang = 'id-ID';
-                    window.speechSynthesis.speak(utterance);
-                }
-            } catch(e) {} finally { isAnnouncing = false; }
-        }
+        };
 
         function updateUI() {
             if (dispThrottleNotch) dispThrottleNotch.innerText = `N${state.throttleNotch}`;
             if (overSpeed) overSpeed.innerText = Math.round(state.speedKmH);
             if (overRpm) overRpm.innerText = Math.round(state.engineRpm);
-            if (overTe) overTe.innerText = Math.round(state.smoothedTractionKN);
+            if (overHsd) overHsd.innerText = Math.round(state.currentHsdLiter);
+
+            if (dispFuelText) dispFuelText.innerText = `${Math.round(state.currentHsdLiter)} / ${state.maxHsdLiter} L`;
+            if (dispFuelBarFill) {
+                const fuelPct = Math.max(0, Math.min(100, (state.currentHsdLiter / state.maxHsdLiter) * 100));
+                dispFuelBarFill.style.width = `${fuelPct}%`;
+            }
 
             if (dispMr) dispMr.innerText = `${Math.round(state.mainResBar * 100)} kPa`;
             if (dispEngTemp) dispEngTemp.innerText = `${Math.round(state.engineTempC)}°C`;
@@ -1003,15 +2115,24 @@
             if (liveClockDisplay) liveClockDisplay.innerText = `🕒 ${formatSecondsToTime(state.simClockSeconds)}`;
 
             const currSt = getTargetStation();
-            const distMeters = currSt.pos - state.positionMeters;
+            const startPlatform = currSt.pos;
+            const endPlatform = currSt.pos + currSt.length + 15; // BATAS S5 (+15m)
+
             if (dispNextStationName) dispNextStationName.innerText = `St. ${currSt.name}`;
 
-            if (distMeters <= 0 && distMeters >= -currSt.length) {
-                if (dispNextStationDist) dispNextStationDist.innerText = "PERON";
-                if (bannerStationText) bannerStationText.innerText = `Berhenti di Peron St. ${currSt.name} (+${currSt.elev}m)`;
+            if (state.positionMeters < startPlatform) {
+                const distToFront = startPlatform - state.positionMeters;
+                const formatDist = distToFront >= 1000 ? `${(distToFront / 1000).toFixed(2)} km` : `${distToFront.toFixed(0)} m`;
+                if (dispNextStationDist) dispNextStationDist.innerText = formatDist;
+                if (bannerStationText) bannerStationText.innerText = `Tujuan: St. ${currSt.name} — Batas S5: ${formatDist}`;
+            } else if (state.positionMeters >= startPlatform && state.positionMeters <= endPlatform) {
+                const distToEnd = endPlatform - state.positionMeters;
+                if (dispNextStationDist) dispNextStationDist.innerText = `${distToEnd.toFixed(0)}m (S5)`;
+                if (bannerStationText) bannerStationText.innerText = `⚠️ PERON ST. ${currSt.name.toUpperCase()} — Batas S5: ${distToEnd.toFixed(0)}m`;
             } else {
-                if (dispNextStationDist) dispNextStationDist.innerText = `${(distMeters / 1000).toFixed(2)} km`;
-                if (bannerStationText) bannerStationText.innerText = `Tujuan: St. ${currSt.name} (+${currSt.elev}m) — ${(distMeters / 1000).toFixed(2)} km`;
+                const distPassed = state.positionMeters - endPlatform;
+                if (dispNextStationDist) dispNextStationDist.innerText = `+${distPassed.toFixed(0)}m Lewat`;
+                if (bannerStationText) bannerStationText.innerText = `❌ LEWAT BATAS S5 (+${distPassed.toFixed(0)}m)`;
             }
 
             if (dispEstStoppingDist) dispEstStoppingDist.innerText = `${state.estimatedStoppingDistance.toFixed(1)} m`;
@@ -1023,17 +2144,17 @@
             if (!canvas) return;
             const parent = canvas.parentElement;
             const w = parent ? parent.clientWidth : 360;
-            const h = 230;
+            const h = 170;
             const dpr = Math.min(window.devicePixelRatio || 1, 2);
             canvas.width = Math.floor(w * dpr);
             canvas.height = Math.floor(h * dpr);
         }
 
         function drawWheels(context, x, y) {
-            const wheelRadius = 7;
+            const wheelRadius = 6;
             const wheelSpeedMultiplier = state.isWheelSlip ? 12 : 3;
             const rotation = (state.positionMeters * wheelSpeedMultiplier) % (Math.PI * 2);
-            [x - 8, x + 8].forEach(wx => {
+            [x - 7, x + 7].forEach(wx => {
                 context.save(); context.translate(wx, y); context.rotate(rotation);
                 context.fillStyle = '#64748b'; context.beginPath(); context.arc(0, 0, wheelRadius, 0, Math.PI * 2); context.fill();
                 context.restore();
@@ -1044,64 +2165,90 @@
             if (!canvas || !ctx) return;
             const dpr = Math.min(window.devicePixelRatio || 1, 2);
             const width = (canvas.width / dpr) || 360;
-            const height = (canvas.height / dpr) || 230;
+            const height = (canvas.height / dpr) || 170;
             if (width <= 0 || height <= 0) return;
 
             ctx.save(); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
             ctx.fillStyle = '#0f172a'; ctx.fillRect(0, 0, width, height);
-            const railY = height - 35;
+            const railY = height - 25;
 
             ctx.fillStyle = '#1e293b';
             for (let i = -1; i < 6; i++) {
-                const x = ((i * 300) - (state.positionMeters * 0.05) % 300);
-                ctx.beginPath(); ctx.moveTo(x, railY); ctx.lineTo(x + 150, railY - 70); ctx.lineTo(x + 300, railY); ctx.fill();
+                const x = ((i * 250) - (state.positionMeters * 0.05) % 250);
+                ctx.beginPath(); ctx.moveTo(x, railY); ctx.lineTo(x + 125, railY - 50); ctx.lineTo(x + 250, railY); ctx.fill();
             }
 
-            const pixelsPerMeter = 8;
+            const pixelsPerMeter = 6;
             const trainX = width * 0.35;
 
+            /* DRAWING STATIONS & BATAS BERHENTI S5 SIGNAL MARKER */
             if (stations && stations.length > 0) {
                 stations.forEach((st) => {
                     const stationX = trainX + (st.pos - state.positionMeters) * pixelsPerMeter;
                     const platformWidth = st.length * pixelsPerMeter;
-                    if (stationX + platformWidth >= -300 && stationX <= width + 300) {
-                        ctx.fillStyle = '#334155'; ctx.fillRect(stationX, railY - 14, platformWidth, 14);
-                        ctx.fillStyle = '#eab308'; ctx.fillRect(stationX, railY - 14, platformWidth, 2);
-                        const bldX = stationX + 40;
-                        ctx.fillStyle = '#f8fafc'; ctx.fillRect(bldX, railY - 60, 110, 46);
-                        ctx.fillStyle = '#b91c1c'; ctx.beginPath(); ctx.moveTo(bldX - 10, railY - 60); ctx.lineTo(bldX + 55, railY - 80); ctx.lineTo(bldX + 120, railY - 60); ctx.closePath(); ctx.fill();
+                    if (stationX + platformWidth >= -200 && stationX <= width + 200) {
+                        ctx.fillStyle = st.isMajor ? '#0284c7' : '#334155'; 
+                        ctx.fillRect(stationX, railY - 12, platformWidth, 12);
+                        ctx.fillStyle = '#eab308'; ctx.fillRect(stationX, railY - 12, platformWidth, 2);
                         
-                        const signX = stationX + 10;
-                        ctx.fillStyle = '#1e293b'; ctx.fillRect(signX, railY - 40, 80, 20);
-                        ctx.fillStyle = '#0284c7'; ctx.fillRect(signX, railY - 40, 80, 5);
-                        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 8px system-ui'; ctx.textAlign = 'center';
-                        ctx.fillText(`ST. ${st.name.toUpperCase()}`, signX + 40, railY - 26);
+                        /* PAPAN BATAS BERHENTI S5 (MAJU 15 METER DARI PERON) */
+                        const s5X = stationX + platformWidth + (15 * pixelsPerMeter);
+                        ctx.fillStyle = '#ef4444'; ctx.fillRect(s5X, railY - 28, 4, 16);
+                        ctx.fillStyle = '#fbbf24'; ctx.beginPath(); ctx.arc(s5X + 2, railY - 30, 6, 0, Math.PI * 2); ctx.fill();
+                        ctx.fillStyle = '#000'; ctx.font = 'bold 6px system-ui'; ctx.textAlign = 'center'; ctx.fillText('S5', s5X + 2, railY - 28);
+
+                        const bldX = stationX + 30;
+                        ctx.fillStyle = '#f8fafc'; ctx.fillRect(bldX, railY - 50, 90, 38);
+                        ctx.fillStyle = '#b91c1c'; ctx.beginPath(); ctx.moveTo(bldX - 8, railY - 50); ctx.lineTo(bldX + 45, railY - 65); ctx.lineTo(bldX + 98, railY - 50); ctx.closePath(); ctx.fill();
+                        
+                        const signX = stationX + 8;
+                        ctx.fillStyle = '#1e293b'; ctx.fillRect(signX, railY - 35, 70, 16);
+                        ctx.fillStyle = st.isMajor ? '#10b981' : '#0284c7'; ctx.fillRect(signX, railY - 35, 70, 4);
+                        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 7px system-ui'; ctx.textAlign = 'center';
+                        ctx.fillText(`ST. ${st.name.toUpperCase()}`, signX + 35, railY - 23);
                     }
                 });
             }
 
-            ctx.fillStyle = '#475569'; ctx.fillRect(-200, railY, width + 400, 6);
-            const sleeperSpacing = 15; const sleeperOffset = (state.positionMeters * pixelsPerMeter) % sleeperSpacing;
-            ctx.fillStyle = '#334155';
-            for (let x = -200 - sleeperOffset; x < width + 200; x += sleeperSpacing) { ctx.fillRect(x, railY + 2, 6, 5); }
-
-            const locoWidth = 125; const carWidth = 95; const trainY = railY - 28;
-            ctx.save(); ctx.translate(trainX, trainY);
-
-            for (let i = 2; i >= 1; i--) {
-                const carX = -i * (carWidth + 10) - 15;
-                ctx.fillStyle = '#1e293b'; ctx.fillRect(carX, -8, carWidth, 30);
-                ctx.fillStyle = '#38bdf8'; for (let w = 8; w < carWidth - 10; w += 16) ctx.fillRect(carX + w, -1, 9, 9);
-                drawWheels(ctx, carX + 15, 22); drawWheels(ctx, carX + carWidth - 20, 22);
+            /* DRAWING ANIMASI PERSILANGAN KERETA (X) */
+            if (state.crossingActive) {
+                const crossY = railY - 42;
+                ctx.fillStyle = '#f59e0b';
+                ctx.fillRect(state.crossingTrainPos, crossY, 120, 14);
+                ctx.fillStyle = '#ef4444';
+                ctx.fillRect(state.crossingTrainPos - 12, crossY, 12, 14);
             }
 
-            const locX = -10;
-            ctx.fillStyle = '#f8fafc'; ctx.fillRect(locX, -10, locoWidth - 35, 28); ctx.fillRect(locX + locoWidth - 45, -20, 30, 38);
-            ctx.fillStyle = '#f97316'; ctx.fillRect(locX, 4, locoWidth - 5, 5);
-            ctx.fillStyle = '#2563eb'; ctx.fillRect(locX, 9, locoWidth - 5, 3);
-            ctx.fillStyle = '#38bdf8'; ctx.fillRect(locX + locoWidth - 38, -13, 7, 7);
+            ctx.fillStyle = '#475569'; ctx.fillRect(-100, railY, width + 200, 5);
+            const sleeperSpacing = 12; const sleeperOffset = (state.positionMeters * pixelsPerMeter) % sleeperSpacing;
+            ctx.fillStyle = '#334155';
+            for (let x = -100 - sleeperOffset; x < width + 100; x += sleeperSpacing) { ctx.fillRect(x, railY + 2, 5, 4); }
 
-            drawWheels(ctx, locX + 20, 22); drawWheels(ctx, locX + locoWidth - 35, 22);
+            const locoWidth = 100; const carWidth = 75; const trainY = railY - 22;
+            ctx.save(); ctx.translate(trainX, trainY);
+
+            const activeUnitsInSlots = window.userData.slots.filter(s => s !== null);
+            if (activeUnitsInSlots.length > 0) {
+                activeUnitsInSlots.forEach((unitId, idx) => {
+                    const unitX = -idx * (carWidth + 6);
+                    ctx.fillStyle = idx === 0 ? '#f8fafc' : (unitId === 'kmp3' ? '#d97706' : '#1e293b');
+                    ctx.fillRect(unitX - carWidth, -8, carWidth, 24);
+                    
+                    ctx.fillStyle = '#38bdf8'; 
+                    for (let w = 6; w < carWidth - 8; w += 12) ctx.fillRect(unitX - carWidth + w, -1, 7, 7);
+                    
+                    drawWheels(ctx, unitX - carWidth + 12, 18); 
+                    drawWheels(ctx, unitX - 15, 18);
+                });
+            } else {
+                const locX = -8;
+                ctx.fillStyle = '#f8fafc'; ctx.fillRect(locX, -8, locoWidth - 28, 22); ctx.fillRect(locX + locoWidth - 36, -16, 24, 30);
+                ctx.fillStyle = '#f97316'; ctx.fillRect(locX, 3, locoWidth - 4, 4);
+                ctx.fillStyle = '#2563eb'; ctx.fillRect(locX, 7, locoWidth - 4, 2);
+                ctx.fillStyle = '#38bdf8'; ctx.fillRect(locX + locoWidth - 30, -10, 6, 6);
+                drawWheels(ctx, locX + 16, 18); drawWheels(ctx, locX + locoWidth - 28, 18);
+            }
+
             ctx.restore(); ctx.restore();
         }
 
@@ -1133,8 +2280,17 @@
             bindDOMElements();
             initStations();
             resizeCanvas();
-            updateControls();
-            updateParameters();
+            
+            const initialStats = calculateDepotStats();
+            if (initialStats.totalMass > 0) {
+                state.massTons = initialStats.totalMass;
+                state.maxTractiveEffortKN = initialStats.totalTE;
+            } else {
+                state.massTons = 84;
+                state.maxTractiveEffortKN = 173;
+            }
+
+            window.updateControls();
             drawTelemetryChart();
             requestAnimationFrame(step);
         }
